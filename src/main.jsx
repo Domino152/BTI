@@ -7,7 +7,7 @@ import './styles.css'
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
-    <BrowserRouter>
+    <BrowserRouter basename="/V2NTA">
       <AppProvider><App /></AppProvider>
     </BrowserRouter>
   </React.StrictMode>,
