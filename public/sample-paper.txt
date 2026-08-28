@@ -1,0 +1,8 @@
+SIMULATED PRACTICE RESOURCE — NTA CITIZEN-FIRST PROTOTYPE
+
+This file is for interface demonstration only. It is not an official question paper.
+
+Sample question:
+If x + 4 = 10, what is x?
+
+A. 4  B. 5  C. 6  D. 7
