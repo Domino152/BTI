@@ -1,23 +1,431 @@
-import { useMemo, useState } from 'react'
-import { Link, Navigate, useLocation, useNavigate, useParams } from 'react-router-dom'
-import { AlertCircle, ArrowLeft, ArrowRight, BookOpen, CalendarDays, Check, CheckCircle2, ChevronRight, Clock3, CreditCard, Download, ExternalLink, FileCheck2, FileText, GraduationCap, HelpCircle, LocateFixed, LockKeyhole, Megaphone, PlayCircle, Search, ShieldCheck, Sparkles, UserRound, WalletCards } from 'lucide-react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { Link, NavLink, Navigate, useLocation, useNavigate, useParams } from 'react-router-dom'
+import {
+  AlertCircle, ArrowLeft, ArrowRight, BookOpen, CalendarDays, Check, CheckCircle2,
+  ChevronLeft, ChevronRight, Clock3, CreditCard, Download, ExternalLink,
+  FileCheck2, FileText, Globe2, GraduationCap, HelpCircle, LocateFixed,
+  LockKeyhole, MapPin, Megaphone, Menu, Newspaper, Phone, PlayCircle,
+  Search, ShieldCheck, Sparkles, UserRound, WalletCards, X
+} from 'lucide-react'
 import { Carousel, EmptyState, ExamCard, ExternalAnchor, Footer, Header, Status, WorkspaceShell } from './components'
-import { ecosystem, exams, getExam, getSteps } from './data'
+import { ecosystem, exams, examinationShowcase, getExam, getSteps, heroSlides, latestNews, partnerLogos } from './data'
 import { useApp } from './state/AppState'
 
 const deepExams = exams.filter(e => e.steps)
 
 export function Home() {
-  return <div className="public-page"><Header/><main><section className="hero"><div className="hero-copy"><span className="eyebrow"><Sparkles size={15}/> A clearer path for every student</span><h1>Every exam.<br/><em>One clear place.</em></h1><p>Discover NTA examinations, prepare with official resources, and keep every application milestone organized from one student workspace.</p><div className="hero-actions"><Link className="primary-btn large" to="/exams">Explore exams <ArrowRight size={18}/></Link><Link className="secondary-btn large" to="/login">Student login</Link></div><div className="trust-note"><ShieldCheck size={18}/><span><strong>Independent prototype</strong> · No connection to private government systems</span></div></div>
-    <div className="hero-visual" aria-label="Student exam planning illustration"><div className="orbit orbit-one"></div><div className="orbit orbit-two"></div><div className="student-card"><div className="student-card-head"><span className="avatar"><UserRound/></span><span><small>YOUR EXAM PLAN</small><strong>Ready for what’s next</strong></span><CheckCircle2/></div><div className="progress-row"><span>Profile readiness</span><b>72%</b></div><div className="progress-bar"><span/></div><div className="mini-step done"><Check/> Profile details reviewed</div><div className="mini-step"><CalendarDays/> Pick your examinations</div></div><div className="float-chip chip-one"><Clock3/> 3 milestones ahead</div><div className="float-chip chip-two"><ShieldCheck/> Private by design</div></div>
-    <div className="hero-tools"><a href="https://nta.ac.in/Quiz" target="_blank" rel="noreferrer" className="tool-card"><span className="tool-icon blue"><PlayCircle/></span><span><small>OFFICIAL MOCK TEST</small><strong>Practice the CBT interface</strong><em>Open mock tests <ExternalLink size={14}/></em></span></a><a href="https://www.nta.ac.in/abhyas" target="_blank" rel="noreferrer" className="tool-card"><span className="tool-icon purple"><BookOpen/></span><span><small>NATIONAL TEST ABHYAS</small><strong>Practice and review performance</strong><em>Explore Abhyas <ExternalLink size={14}/></em></span></a></div>
-    </section><Carousel items={ecosystem}/></main><Footer/></div>
+  return <div className="public-page">
+    <a className="nta-skip" href="#nta-main">Skip to main content</a>
+    <Header/>
+    <main id="nta-main">
+      <section className="nta-hero">
+        <div className="nta-hero-left">
+          <div className="nta-practice-grid">
+            <a href="https://nta.ac.in/Quiz" target="_blank" rel="noreferrer" className="nta-action-card" aria-label="Open official mock test">
+              <div className="eyebrow-row"><span className="eyebrow">OFFICIAL MOCK TEST</span><span className="icon-circle"><PlayCircle size={18}/></span></div>
+              <h3>Mock Test</h3>
+              <p>Practice tests for real exam experience</p>
+              <span className="cta">Start Mock Test <ArrowRight size={14}/></span>
+            </a>
+            <a href="https://www.nta.ac.in/abhyas" target="_blank" rel="noreferrer" className="nta-action-card accent-green" aria-label="Open National Test Abhyas">
+              <div className="eyebrow-row"><span className="eyebrow">NATIONAL TEST ABHYAS</span><span className="icon-circle"><BookOpen size={18}/></span></div>
+              <h3>Abhyas</h3>
+              <p>Practice and improve your performance</p>
+              <span className="cta">Go to Abhyas <ArrowRight size={14}/></span>
+            </a>
+          </div>
+          <LatestNews/>
+        </div>
+        <div className="nta-hero-right">
+          <HeroCarousel slides={heroSlides}/>
+        </div>
+      </section>
+
+      <section className="nta-section nta-container">
+        <div className="nta-section-head">
+          <h2>National <span>Testing</span> Agency</h2>
+          <p>National Testing Agency (NTA) is a registered society under the Societies Registration Act, 1860.<br/>The NTA will conduct all exams in following domains:</p>
+        </div>
+        <ExamCarousel items={examinationShowcase}/>
+      </section>
+
+      <section className="nta-partners-section">
+        <div className="nta-container">
+          <PartnersCarousel items={partnerLogos}/>
+        </div>
+      </section>
+    </main>
+    <NtaFooter/>
+  </div>
+}
+
+/* =========================================================
+   NTA HOMEPAGE — Redesigned local components
+   These do NOT replace the shared Header/Footer used by
+   other pages; they are scoped to the redesigned Home only.
+   ========================================================= */
+
+function useLiveClock() {
+  const [now, setNow] = useState(() => new Date())
+  useEffect(() => {
+    const t = setInterval(() => setNow(new Date()), 30_000)
+    return () => clearInterval(t)
+  }, [])
+  return now
+}
+
+function formatDate(d) {
+  return d.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: '2-digit', year: 'numeric' })
+}
+function formatTime(d) {
+  return d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })
+}
+
+function NtaHeader() {
+  const [open, setOpen] = useState(false)
+  const { state } = useApp()
+  const links = [
+    ['/', 'Home'],
+    ['/about-us', 'About Us'],
+    ['/exams-by-category', 'Exams'],
+    ['/rti', 'RTI'],
+    ['/tender', 'Tender'],
+    ['/downloads', 'Downloads'],
+    ['/contact-us', 'Contact Us']
+  ]
+  return <header className="nta-header">
+    <div className="nta-header-inner">
+      <Link className="nta-brand" to="/" aria-label="National Testing Agency home">
+        <span className="nta-emblem" aria-hidden="true"></span>
+        <span className="nta-brand-text">
+          <small className="hi">राष्ट्रीय परीक्षा एजेंसी</small>
+          <strong className="en">National Testing Agency</strong>
+        </span>
+      </Link>
+
+      <nav className={open ? 'nta-nav open' : 'nta-nav'} aria-label="Main navigation">
+        {links.map(([to, label]) => (
+          <NavLink key={to} to={to} onClick={() => setOpen(false)}>{label}</NavLink>
+        ))}
+      </nav>
+
+      <div className="nta-azadi" aria-label="75th Azadi Ka Amrit Mahotsav">
+        <span className="nta-azadi-tricolor" aria-hidden="true"><span/><span/><span/></span>
+        <span className="nta-azadi-text"><strong>75</strong><small>Azadi Ka</small>Amrit Mahotsav</span>
+      </div>
+
+      <div className="nta-header-right">
+        <LiveDateTime/>
+        <Link className="primary-btn" to="/login" style={{minHeight:42,padding:'0 18px'}}>
+          <UserRound size={15}/> {state.authenticated ? 'My Account' : 'Sign In / Login'} <ArrowRight size={15}/>
+        </Link>
+        <button className="nta-menu-btn" aria-label={open ? 'Close menu' : 'Open menu'} aria-expanded={open} onClick={() => setOpen(o => !o)}>
+          {open ? <X size={20}/> : <Menu size={20}/>}
+        </button>
+      </div>
+    </div>
+  </header>
+}
+
+function LiveDateTime() {
+  const now = useLiveClock()
+  return <div className="nta-date-chip desktop-only" aria-hidden="true">
+    <small>{formatDate(now)}</small>
+    <strong>{formatTime(now)} IST</strong>
+  </div>
+}
+
+function TirangaComposite() {
+  return <div className="tiranga-composite" aria-hidden="true">
+    <div className="poster astronaut">
+      <span className="poster-tag">#MomentsWithTiranga</span>
+      <div className="portrait"><UserRound size={74}/></div>
+      <p>Rakesh Sharma proudly displayed the Indian National Flag on his spacesuit</p>
+    </div>
+    <div className="poster mountain">
+      <span className="mini-azadi">75</span>
+      <h3>Know <b>your</b> Tiranga!</h3>
+      <div className="mountain-card">
+        <strong>Tenzing Norgay</strong>
+        <span>became the first person to hoist the Indian National Flag on Mt. Everest on <b>29 May 1953.</b></span>
+      </div>
+      <div className="flag-town"></div>
+    </div>
+    <div className="poster history">
+      <span className="mini-azadi">75</span>
+      <p>On <b>15 Aug 1947</b> at <b>10:30 am</b>, the National Flag of India was raised on the flag mast for the <b>first time</b> at the Parliament.</p>
+      <strong>KNOW YOUR<br/>TIRANGA</strong>
+    </div>
+  </div>
+}
+
+function HeroCarousel({ slides }) {
+  const [active, setActive] = useState(0)
+  const [paused, setPaused] = useState(false)
+  const rail = useRef(null)
+
+  useEffect(() => {
+    if (paused) return
+    const t = setInterval(() => setActive(a => (a + 1) % slides.length), 5000)
+    return () => clearInterval(t)
+  }, [paused, slides.length])
+
+  useEffect(() => {
+    const onKey = e => {
+      if (e.key === 'ArrowRight') setActive(a => (a + 1) % slides.length)
+      if (e.key === 'ArrowLeft') setActive(a => (a - 1 + slides.length) % slides.length)
+    }
+    const el = rail.current
+    if (!el) return
+    el.addEventListener('keydown', onKey)
+    return () => el.removeEventListener('keydown', onKey)
+  }, [slides.length])
+
+  return <div
+    className="nta-hero-carousel"
+    role="region"
+    aria-roledescription="carousel"
+    aria-label="NTA promotional highlights"
+    ref={rail}
+    tabIndex={0}
+    onMouseEnter={() => setPaused(true)}
+    onMouseLeave={() => setPaused(false)}
+    onFocus={() => setPaused(true)}
+    onBlur={() => setPaused(false)}
+  >
+    {slides.map((s, i) => (
+      <article key={s.id} className={`nta-hero-slide ${i === active ? 'active' : ''}`} aria-hidden={i !== active} aria-roledescription="slide" aria-label={`${i + 1} of ${slides.length}`}>
+        <div className={`slide-bg bg-${s.bg}`}></div>
+        {s.id === 'tiranga' ? <TirangaComposite/> : <div className="slide-content">
+          <div className="badge-row">
+            <span className="badge-pill">{s.eyebrow}</span>
+            <span className="badge-pill">{s.badge}</span>
+          </div>
+          <h2>{s.title}</h2>
+          <p>{s.subtitle}</p>
+        </div>}
+      </article>
+    ))}
+    <div className="nta-hero-dots" role="tablist" aria-label="Slide selectors">
+      {slides.map((_, i) => (
+        <button key={i} className={i === active ? 'active' : ''} aria-label={`Go to slide ${i + 1}`} aria-current={i === active} onClick={() => setActive(i)}/>
+      ))}
+    </div>
+    <div className="nta-hero-controls">
+      <button aria-label="Previous slide" onClick={() => setActive(a => (a - 1 + slides.length) % slides.length)}><ChevronLeft size={18}/></button>
+      <button aria-label="Next slide" onClick={() => setActive(a => (a + 1) % slides.length)}><ChevronRight size={18}/></button>
+    </div>
+  </div>
+}
+
+function LatestNews() {
+  const today = new Date('2026-08-28')
+  const isNew = iso => {
+    const d = new Date(iso)
+    return (today - d) / 86400000 <= 7
+  }
+  const typeClass = t => {
+    const m = (t || '').toLowerCase()
+    if (m.includes('admit')) return 'admit'
+    if (m.includes('result')) return 'result'
+    if (m.includes('notice')) return 'notice'
+    return ''
+  }
+  return <section className="nta-news-panel" aria-labelledby="latest-news-title">
+    <div className="nta-news-head">
+      <div className="left">
+        <span className="ic" aria-hidden="true"><Newspaper size={16}/></span>
+        <h3 id="latest-news-title">Latest News</h3>
+      </div>
+      <Link className="view-all" to="/notices">View All <ArrowRight size={12}/></Link>
+    </div>
+    <div className="nta-news-list">
+      {latestNews.map(n => (
+        <article key={n.id} className="nta-news-item">
+          <span className="marker" aria-hidden="true"></span>
+          <div className="body">
+            <div className="meta">
+              <time className="date" dateTime={n.date}>{new Date(n.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</time>
+              <span className={`type ${typeClass(n.type)}`}>{n.type}</span>
+            </div>
+            <h4>{n.title}</h4>
+          </div>
+          {isNew(n.date) && <span className="new-badge" aria-label="New">New</span>}
+        </article>
+      ))}
+    </div>
+    <div className="nta-news-foot">
+      <Link to="/notices">View All News <ArrowRight size={12}/></Link>
+    </div>
+  </section>
+}
+
+function ExamCarousel({ items }) {
+  const rail = useRef(null)
+  const [activePage, setActivePage] = useState(0)
+  const [pagesCount, setPagesCount] = useState(1)
+
+  const scrollBy = dir => rail.current?.scrollBy({ left: dir * 340, behavior: 'smooth' })
+
+  useEffect(() => {
+    const el = rail.current
+    if (!el) return
+    const update = () => {
+      const perView = el.clientWidth / 260
+      setPagesCount(Math.max(1, Math.ceil(items.length / Math.max(1, Math.floor(perView)))))
+      setActivePage(Math.round(el.scrollLeft / el.clientWidth))
+    }
+    update()
+    el.addEventListener('scroll', update, { passive: true })
+    window.addEventListener('resize', update)
+    return () => { el.removeEventListener('scroll', update); window.removeEventListener('resize', update) }
+  }, [items.length])
+
+  return <div className="nta-exam-carousel" aria-label="NTA examinations carousel">
+    <div className="nta-exam-rail" ref={rail} role="list">
+      {items.map(ex => (
+        <a key={ex.id} href={ex.url} target="_blank" rel="noreferrer" className="nta-exam-card" role="listitem" aria-label={`${ex.name} — ${ex.category}`}>
+          <span className="card-ribbon">{ex.name}</span>
+          <span className="exam-logo" style={{ '--exam-color': ex.color }}>{ex.monogram}</span>
+          <span className="category">{ex.category}</span>
+          <h3>{ex.name}</h3>
+          <p>{ex.description}</p>
+        </a>
+      ))}
+    </div>
+    <div className="controls">
+      <button aria-label="Scroll examinations left" onClick={() => scrollBy(-1)}><ChevronLeft size={18}/></button>
+      <button aria-label="Scroll examinations right" onClick={() => scrollBy(1)}><ChevronRight size={18}/></button>
+    </div>
+  </div>
+}
+
+function PartnersCarousel({ items }) {
+  const rail = useRef(null)
+  const [activePage, setActivePage] = useState(0)
+  const [pagesCount, setPagesCount] = useState(1)
+
+  const scrollBy = dir => rail.current?.scrollBy({ left: dir * 220, behavior: 'smooth' })
+
+  useEffect(() => {
+    const el = rail.current
+    if (!el) return
+    const update = () => {
+      const perView = el.clientWidth / 200
+      const perPage = Math.max(1, Math.floor(perView))
+      setPagesCount(Math.max(1, Math.ceil(items.length / perPage)))
+      setActivePage(Math.min(pagesCount - 1, Math.round(el.scrollLeft / el.clientWidth)))
+    }
+    update()
+    el.addEventListener('scroll', update, { passive: true })
+    window.addEventListener('resize', update)
+    return () => { el.removeEventListener('scroll', update); window.removeEventListener('resize', update) }
+  }, [items.length, pagesCount])
+
+  return <div className="nta-partners-carousel" aria-label="Government partners carousel">
+    <div className="nta-partners-rail" ref={rail}>
+      {items.map(p => (
+        <a key={p.name} href={p.url} target="_blank" rel="noreferrer" className="nta-partner-card" aria-label={`${p.name} — official website`}>
+          <span className="nta-partner-logo" style={{ '--partner-color': p.color }}>{p.monogram}</span>
+          <strong>{p.name}</strong>
+        </a>
+      ))}
+    </div>
+    <div className="controls">
+      <button aria-label="Scroll partners left" onClick={() => scrollBy(-1)}><ChevronLeft size={16}/></button>
+      <button aria-label="Scroll partners right" onClick={() => scrollBy(1)}><ChevronRight size={16}/></button>
+    </div>
+    <div className="nta-partners-dots" role="tablist" aria-label="Partner page indicators">
+      {Array.from({ length: pagesCount }).map((_, i) => (
+        <button key={i} className={i === activePage ? 'active' : ''} aria-label={`Page ${i + 1}`} aria-current={i === activePage} onClick={() => {
+          const el = rail.current
+          if (!el) return
+          el.scrollTo({ left: i * el.clientWidth, behavior: 'smooth' })
+        }}/>
+      ))}
+    </div>
+  </div>
+}
+
+function NtaFooter() {
+  return <footer className="nta-footer" aria-labelledby="nta-footer-title">
+    <h2 id="nta-footer-title" className="sr-only">NTA website footer</h2>
+    <div className="nta-footer-top">
+      <div className="nta-footer-col">
+        <h4>Quick Links</h4>
+        <ul>
+          <li><a href="https://nta.ac.in/Quiz" target="_blank" rel="noreferrer">Mock Test</a></li>
+          <li><a href="https://www.nta.ac.in/abhyas" target="_blank" rel="noreferrer">Abhyas</a></li>
+          <li><Link to="/exams-by-category">Exam Calendar</Link></li>
+          <li><Link to="/notices">Results</Link></li>
+          <li><Link to="/notices">Admit Card</Link></li>
+          <li><Link to="/notices">Answer Key</Link></li>
+          <li><Link to="/resources">Previous Year Papers</Link></li>
+          <li><Link to="/help">Help Center</Link></li>
+        </ul>
+      </div>
+
+      <div className="nta-footer-col">
+        <h4>Contact Us</h4>
+        <div className="nta-footer-contact">
+          <div className="item">
+            <span className="ic"><MapPin size={14}/></span>
+            <div>
+              <strong>Address</strong>
+              First Floor, NSIC-MDBP Building,<br/>
+              Okhla Industrial Estate,<br/>
+              New Delhi, Delhi 110020
+            </div>
+          </div>
+          <div className="item">
+            <span className="ic"><Phone size={14}/></span>
+            <div>
+              <strong>Phone</strong>
+              <a href="tel:01169227700">011-69227700</a>
+            </div>
+          </div>
+          <div className="item">
+            <span className="ic"><Globe2 size={14}/></span>
+            <div>
+              <strong>Email</strong>
+              <a href="mailto:genadmin@nta.ac.in">genadmin@nta.ac.in</a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="nta-footer-col">
+        <h4>Location</h4>
+        <div className="nta-footer-map" aria-label="NTA office location">
+          <div className="map-art">
+            <span className="pin"><MapPin size={28}/></span>
+            <span className="map-label">National Testing Agency<br/>राष्ट्रीय परीक्षा एजेंसी</span>
+          </div>
+          <a href="https://maps.google.com/?q=NSIC-MDBP+Building+Okhla+New+Delhi" target="_blank" rel="noreferrer">View larger map <ArrowRight size={12}/></a>
+        </div>
+      </div>
+    </div>
+
+    <div className="nta-footer-bottom">
+      <div className="nta-footer-bottom-inner">
+        <nav aria-label="Footer navigation">
+          <a href="https://www.nta.ac.in/" target="_blank" rel="noreferrer">Official NTA</a>
+          <Link to="/exams-by-category">All Exams</Link>
+          <Link to="/resources">Resources</Link>
+          <Link to="/about-prototype">About</Link>
+          <Link to="/help">Help</Link>
+        </nav>
+        <div>© 2026 National Testing Agency · All rights reserved.</div>
+      </div>
+      <p className="nta-footer-disclaimer">Prototype disclaimer: This is an independent redesign concept for demonstration purposes. Not affiliated with or endorsed by NTA or the Government of India. All candidate data shown is simulated.</p>
+    </div>
+  </footer>
 }
 
 export function Login() {
   const { state, login, reset } = useApp(); const navigate = useNavigate(); const location = useLocation()
   const submit = e => { e.preventDefault(); login(); const target = state.profile.selectedExamIds.length ? '/dashboard' : '/onboarding/exams'; navigate(location.state?.from?.pathname || target, { replace: true }) }
-  return <div className="auth-page"><Header/><main className="auth-main"><section className="login-panel"><div className="login-intro"><span className="eyebrow">Student workspace</span><h1>Your exam journey,<br/>without the guesswork.</h1><p>This safe demo uses a synthetic student profile. No OTP, government login, or personal data is involved.</p><ul><li><Check/> Select only the exams that matter to you</li><li><Check/> Keep each application’s progress separate</li><li><Check/> Find official resources in context</li></ul></div><form className="login-card" onSubmit={submit}><span className="lock-icon"><LockKeyhole/></span><h2>Try the student demo</h2><p>Continue with a simulated account built for this prototype.</p><label>Email<input type="email" value="aarav@example.test" readOnly/></label><label>Password<input type="password" value="synthetic-demo" readOnly/></label><button className="primary-btn full" type="submit">Continue securely <ArrowRight size={17}/></button><p className="form-note"><ShieldCheck size={15}/> Your choices are stored only in this browser.</p><button type="button" className="text-btn" onClick={() => { reset(); }}>Reset demo to first login</button></form></section></main><Footer/></div>
+  return <div className="auth-page"><Header/><main className="auth-main"><section className="login-panel"><div className="login-intro"><span className="eyebrow">Candidate services</span><h1>NTA examination services portal</h1><p>Access examination workspaces, application milestones, notices, and official resources from a unified candidate dashboard.</p><ul><li><Check/> Track selected examinations in separate workspaces</li><li><Check/> Review application stages and official resources</li><li><Check/> Keep candidate service information structured and accessible</li></ul></div><form className="login-card" onSubmit={submit}><span className="lock-icon"><LockKeyhole/></span><h2>Candidate Login</h2><p>Continue with the demonstration candidate account.</p><label>Email<input type="email" value="aarav@example.test" readOnly/></label><label>Password<input type="password" value="synthetic-demo" readOnly/></label><button className="primary-btn full" type="submit">Sign in to candidate services <ArrowRight size={17}/></button><p className="form-note"><ShieldCheck size={15}/> Demonstration data remains local to this browser.</p><button type="button" className="text-btn" onClick={() => { reset(); }}>Reset demonstration account</button></form></section></main><Footer/></div>
 }
 
 export function Onboarding() {
@@ -82,10 +490,10 @@ export function ManageExams() {
 
 function PublicLayout({children}) { return <div className="public-page"><Header/><main className="public-main">{children}</main><Footer/></div> }
 
-export function ExamCatalogue() { const [q,setQ]=useState(''); const filtered=exams.filter(e=>`${e.name} ${e.domain} ${e.purpose}`.toLowerCase().includes(q.toLowerCase())); return <PublicLayout><div className="public-title"><span className="eyebrow">Exam catalogue</span><h1>Find the examination that fits your goal</h1><p>Explore sample metadata, then continue to the official portal for authoritative information.</p></div><label className="search-field standalone"><Search/><span className="sr-only">Search exams</span><input value={q} onChange={e=>setQ(e.target.value)} placeholder="Search examinations…"/></label><div className="exam-grid">{filtered.map(e=><ExamCard key={e.id} exam={e} selected={false} onToggle={()=>{}}/>)}</div></PublicLayout> }
+export function ExamCatalogue() { const [q,setQ]=useState(''); const filtered=exams.filter(e=>`${e.name} ${e.domain} ${e.purpose}`.toLowerCase().includes(q.toLowerCase())); return <PublicLayout><div className="public-title"><span className="eyebrow">Examinations</span><h1>NTA examination catalogue</h1><p>Search national-level examinations conducted by NTA and proceed to the respective official portals for authoritative information.</p></div><label className="search-field standalone"><Search/><span className="sr-only">Search exams</span><input value={q} onChange={e=>setQ(e.target.value)} placeholder="Search examination name, domain, or purpose"/></label><div className="exam-grid">{filtered.map(e=><ExamCard key={e.id} exam={e} selected={false} onToggle={()=>{}}/>)}</div></PublicLayout> }
 
-export function Notices() { const [examId,setExamId]=useState('all'); const notices=deepExams.filter(e=>examId==='all'||e.id===examId).flatMap(e=>(e.notices||[]).map(n=>({...n,exam:e}))); return <PublicLayout><div className="public-title"><span className="eyebrow">Notice centre</span><h1>Relevant updates, minus the noise</h1><p>Small, simulated dataset for demonstrating exam filters. Always verify on the official portal.</p></div><div className="filter-bar one"><select value={examId} onChange={e=>setExamId(e.target.value)} aria-label="Filter by exam"><option value="all">All demo examinations</option>{deepExams.map(e=><option value={e.id} key={e.id}>{e.shortName}</option>)}</select></div><section className="panel public-list">{notices.map(n=><article key={`${n.exam.id}-${n.title}`}><span className="notice-icon"><Megaphone/></span><div><span className="notice-type">{n.exam.shortName} · {n.type}</span><h3>{n.title}</h3><small>{n.date} · Simulated notice</small></div><ExternalAnchor href={n.exam.officialUrl}>Verify officially</ExternalAnchor></article>)}</section></PublicLayout> }
+export function Notices() { const [examId,setExamId]=useState('all'); const notices=deepExams.filter(e=>examId==='all'||e.id===examId).flatMap(e=>(e.notices||[]).map(n=>({...n,exam:e}))); return <PublicLayout><div className="public-title"><span className="eyebrow">Public notices</span><h1>Examination notices and announcements</h1><p>Review examination-wise announcements and verify final instructions on the corresponding official NTA portal.</p></div><div className="filter-bar one"><select value={examId} onChange={e=>setExamId(e.target.value)} aria-label="Filter by exam"><option value="all">All examinations</option>{deepExams.map(e=><option value={e.id} key={e.id}>{e.shortName}</option>)}</select></div><section className="panel public-list">{notices.map(n=><article key={`${n.exam.id}-${n.title}`}><span className="notice-icon"><Megaphone/></span><div><span className="notice-type">{n.exam.shortName} · {n.type}</span><h3>{n.title}</h3><small>{n.date} · Candidate notice</small></div><ExternalAnchor href={n.exam.officialUrl}>Verify officially</ExternalAnchor></article>)}</section></PublicLayout> }
 
-export function Help() { return <PublicLayout><div className="public-title"><span className="eyebrow">Help directory</span><h1>Start with the right source</h1><p>Use official channels for application, eligibility and payment questions. This prototype does not provide case-specific decisions.</p></div><div className="help-grid"><section className="panel"><HelpCircle/><h2>Official NTA support</h2><p>Find current exam-specific contact details on NTA’s directory.</p><ExternalAnchor className="primary-btn" href="https://www.nta.ac.in/ContactUs">Open official directory</ExternalAnchor></section><section className="panel"><PlayCircle/><h2>Mock test help</h2><p>Learn how to use official CBT practice resources.</p><ExternalAnchor className="secondary-btn" href="https://nta.ac.in/Quiz">Open mock tests</ExternalAnchor></section><section className="panel"><BookOpen/><h2>Abhyas guidance</h2><p>Get support for practice tests and performance review.</p><ExternalAnchor className="secondary-btn" href="https://www.nta.ac.in/Abhyas/help">Open Abhyas help</ExternalAnchor></section></div></PublicLayout> }
+export function Help() { return <PublicLayout><div className="public-title"><span className="eyebrow">Help desk</span><h1>Candidate support resources</h1><p>Use official channels for application, eligibility, payment, admit card, and result-related questions.</p></div><div className="help-grid"><section className="panel"><HelpCircle/><h2>Official NTA support</h2><p>Find current exam-specific contact details on NTA’s directory.</p><ExternalAnchor className="primary-btn" href="https://www.nta.ac.in/ContactUs">Open official directory</ExternalAnchor></section><section className="panel"><PlayCircle/><h2>Mock test help</h2><p>Access computer-based test practice resources.</p><ExternalAnchor className="secondary-btn" href="https://nta.ac.in/Quiz">Open mock tests</ExternalAnchor></section><section className="panel"><BookOpen/><h2>Abhyas guidance</h2><p>Access practice tests and performance review resources.</p><ExternalAnchor className="secondary-btn" href="https://www.nta.ac.in/Abhyas/help">Open Abhyas help</ExternalAnchor></section></div></PublicLayout> }
 
-export function About() { return <PublicLayout><div className="public-title"><span className="eyebrow">About the prototype</span><h1>A citizen-first concept, built independently</h1><p>This hackathon prototype explores a clearer, student-centred information architecture for multi-exam journeys.</p></div><div className="about-grid"><section className="panel"><h2>What is simulated</h2><p>Candidate identity, application numbers, dates, fees, centers, notices, answers and payment references are fictional. Browser storage is used for the demo.</p></section><section className="panel"><h2>What is official</h2><p>Clearly labeled external links lead to public NTA or exam websites. Those websites remain the authoritative source.</p></section><section className="panel"><h2>What we never do</h2><p>We do not log in to, scrape, imitate or send information to private government services.</p></section></div></PublicLayout> }
+export function About() { return <PublicLayout><div className="public-title"><span className="eyebrow">About this redesign</span><h1>NTA website interface concept</h1><p>This interface concept demonstrates a clearer information architecture for examination discovery, candidate services, notices, and official resources.</p></div><div className="about-grid"><section className="panel"><h2>Demonstration data</h2><p>Candidate identity, application numbers, dates, fees, centres, notices, answers, and payment references are fictional.</p></section><section className="panel"><h2>Official sources</h2><p>Clearly labelled external links lead to public NTA or examination websites. Those websites remain the authoritative source.</p></section><section className="panel"><h2>Service boundary</h2><p>This interface does not log in to, scrape, imitate, or transmit information to private government services.</p></section></div></PublicLayout> }
