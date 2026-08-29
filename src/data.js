@@ -23,36 +23,24 @@ export const getSteps = (exam) => exam.steps || ['Profile review', 'Exam prefere
 // Hero promotional carousel slides
 export const heroSlides = [
   {
-    id: 'tiranga',
-    eyebrow: 'Azadi Ka Amrit Mahotsav',
-    title: 'Know Your Tiranga',
-    subtitle: 'Honouring the tricolour and the spirit of a free India.',
-    bg: 'tiranga',
-    badge: '#MomentsWithTiranga'
+    id: 'tiranga-moments',
+    image: 'hero/nta-slide-02.png',
+    alt: 'Know Your Tiranga stories featuring Rakesh Sharma, Tenzing Norgay and the first flag raising at Parliament'
   },
   {
-    id: 'abhyas',
-    eyebrow: 'National Test Abhyas',
-    title: 'Practice. Perform. Progress.',
-    subtitle: 'Official practice platform for NTA examinations across streams.',
-    bg: 'abhyas',
-    badge: 'Practice'
+    id: 'tiranga-dharma-chakra',
+    image: 'hero/nta-slide-03.png',
+    alt: 'Know Your Tiranga feature about Ashoka Dharma Chakra'
   },
   {
-    id: 'jee-main',
-    eyebrow: 'JEE (Main) 2026',
-    title: 'Session 1 registration now open',
-    subtitle: 'Apply online at the official JEE Main portal before the deadline.',
-    bg: 'jee',
-    badge: 'Engineering'
+    id: 'tiranga-across-india',
+    image: 'hero/nta-slide-04.png',
+    alt: 'Moments with Tiranga from Tololing peak, the coast and a snow-bound BSF post'
   },
   {
-    id: 'cuet-ug',
-    eyebrow: 'CUET (UG) 2026',
-    title: 'Common University Entrance Test',
-    subtitle: 'One test, multiple central and state universities across India.',
-    bg: 'cuet',
-    badge: 'University'
+    id: 'tiranga-flag-code',
+    image: 'hero/nta-slide-05.png',
+    alt: 'Indian Flag Code, national flag specifications and Pingali Venkayya tribute'
   }
 ]
 

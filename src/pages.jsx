@@ -10,36 +10,42 @@ import {
 import { Carousel, EmptyState, ExamCard, ExternalAnchor, Footer, Header, Status, WorkspaceShell } from './components'
 import { ecosystem, exams, examinationShowcase, getExam, getSteps, heroSlides, latestNews, partnerLogos } from './data'
 import { useApp } from './state/AppState'
+import { api } from './api'
+import { useOfficialNotices } from './useOfficialData'
 
 const deepExams = exams.filter(e => e.steps)
 
 export function Home() {
+  const official = useOfficialNotices(latestNews)
   return <div className="public-page">
     <a className="nta-skip" href="#nta-main">Skip to main content</a>
     <NtaTopBar/>
     <NtaHeader/>
     <main id="nta-main">
-      <section className="nta-hero">
-        <div className="nta-hero-left">
+      <section className="nta-home-lead" aria-label="Featured highlights and candidate services">
+        <div className="nta-home-side-services">
           <div className="nta-practice-grid">
-            <a href="https://nta.ac.in/Quiz" target="_blank" rel="noreferrer" className="nta-action-card" aria-label="Open official mock test">
+            <Link to="/mock-test" className="nta-action-card" aria-label="Open mock test experience">
               <div className="eyebrow-row"><span className="eyebrow">OFFICIAL MOCK TEST</span><span className="icon-circle"><PlayCircle size={18}/></span></div>
               <h3>Mock Test</h3>
               <p>Practice tests for real exam experience</p>
               <span className="cta">Start Mock Test <ArrowRight size={14}/></span>
-            </a>
-            <a href="https://www.nta.ac.in/abhyas" target="_blank" rel="noreferrer" className="nta-action-card accent-green" aria-label="Open National Test Abhyas">
+            </Link>
+            <Link to="/abhyas" className="nta-action-card accent-green" aria-label="Open National Test Abhyas experience">
               <div className="eyebrow-row"><span className="eyebrow">NATIONAL TEST ABHYAS</span><span className="icon-circle"><BookOpen size={18}/></span></div>
               <h3>Abhyas</h3>
               <p>Practice and improve your performance</p>
               <span className="cta">Go to Abhyas <ArrowRight size={14}/></span>
-            </a>
+            </Link>
           </div>
-          <LatestNews/>
         </div>
-        <div className="nta-hero-right">
+        <div className="nta-home-hero">
           <HeroCarousel slides={heroSlides}/>
         </div>
+      </section>
+
+      <section className="nta-home-services" aria-label="Latest news">
+        <LatestNews items={official.items} live={official.live} sync={official.sync}/>
       </section>
 
       <section className="nta-section nta-container">
@@ -216,15 +222,8 @@ function HeroCarousel({ slides }) {
   >
     {slides.map((s, i) => (
       <article key={s.id} className={`nta-hero-slide ${i === active ? 'active' : ''}`} aria-hidden={i !== active} aria-roledescription="slide" aria-label={`${i + 1} of ${slides.length}`}>
-        <div className={`slide-bg bg-${s.bg}`}></div>
-        {s.id === 'tiranga' ? <TirangaComposite/> : <div className="slide-content">
-          <div className="badge-row">
-            <span className="badge-pill">{s.eyebrow}</span>
-            <span className="badge-pill">{s.badge}</span>
-          </div>
-          <h2>{s.title}</h2>
-          <p>{s.subtitle}</p>
-        </div>}
+        <span className="nta-hero-image-backdrop" style={{backgroundImage:`url(${import.meta.env.BASE_URL}${s.image})`}} aria-hidden="true"></span>
+        <img className={`nta-hero-image ${s.fit === 'cover' ? 'fit-cover' : 'fit-contain'}`} style={{objectPosition:s.position || 'center'}} src={`${import.meta.env.BASE_URL}${s.image}`} alt={s.alt}/>
       </article>
     ))}
     <div className="nta-hero-dots" role="tablist" aria-label="Slide selectors">
@@ -239,8 +238,8 @@ function HeroCarousel({ slides }) {
   </div>
 }
 
-function LatestNews() {
-  const today = new Date('2026-08-28')
+function LatestNews({ items, live, sync }) {
+  const today = new Date()
   const isNew = iso => {
     const d = new Date(iso)
     return (today - d) / 86400000 <= 7
@@ -256,12 +255,12 @@ function LatestNews() {
     <div className="nta-news-head">
       <div className="left">
         <span className="ic" aria-hidden="true"><Newspaper size={16}/></span>
-        <h3 id="latest-news-title">Latest News</h3>
+        <h3 id="latest-news-title">Latest News {live && <span className="live-source-badge">Official sync</span>}</h3>
       </div>
       <Link className="view-all" to="/notices">View All <ArrowRight size={12}/></Link>
     </div>
     <div className="nta-news-list">
-      {latestNews.map(n => (
+      {items.slice(0, 5).map(n => (
         <article key={n.id} className="nta-news-item">
           <span className="marker" aria-hidden="true"></span>
           <div className="body">
@@ -269,14 +268,14 @@ function LatestNews() {
               <time className="date" dateTime={n.date}>{new Date(n.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</time>
               <span className={`type ${typeClass(n.type)}`}>{n.type}</span>
             </div>
-            <h4>{n.title}</h4>
+            <h4>{n.sourceUrl ? <a href={n.sourceUrl} target="_blank" rel="noreferrer">{n.title}</a> : n.title}</h4>
           </div>
           {isNew(n.date) && <span className="new-badge" aria-label="New">New</span>}
         </article>
       ))}
     </div>
     <div className="nta-news-foot">
-      <Link to="/notices">View All News <ArrowRight size={12}/></Link>
+      <Link to="/notices">View All News <ArrowRight size={12}/></Link>{sync?.completedAt && <small>Updated {new Date(sync.completedAt).toLocaleString('en-IN')}</small>}
     </div>
   </section>
 }
@@ -393,8 +392,8 @@ function NtaFooter() {
       <div className="nta-footer-col">
         <h4>Quick Links</h4>
         <ul>
-          <li><a href="https://nta.ac.in/Quiz" target="_blank" rel="noreferrer">Mock Test</a></li>
-          <li><a href="https://www.nta.ac.in/abhyas" target="_blank" rel="noreferrer">Abhyas</a></li>
+          <li><Link to="/mock-test">Mock Test</Link></li>
+          <li><Link to="/abhyas">Abhyas</Link></li>
           <li><Link to="/exams-by-category">Exam Calendar</Link></li>
           <li><Link to="/notices">Results</Link></li>
           <li><Link to="/notices">Admit Card</Link></li>
@@ -468,9 +467,17 @@ function NtaFooter() {
 }
 
 export function Login() {
-  const { state, login, reset } = useApp(); const navigate = useNavigate(); const location = useLocation()
-  const submit = e => { e.preventDefault(); login(); const target = state.profile.selectedExamIds.length ? '/dashboard' : '/onboarding/exams'; navigate(location.state?.from?.pathname || target, { replace: true }) }
-  return <div className="auth-page"><Header/><main className="auth-main"><section className="login-panel"><div className="login-intro"><span className="eyebrow">Candidate services</span><h1>NTA examination services portal</h1><p>Access examination workspaces, application milestones, notices, and official resources from a unified candidate dashboard.</p><ul><li><Check/> Track selected examinations in separate workspaces</li><li><Check/> Review application stages and official resources</li><li><Check/> Keep candidate service information structured and accessible</li></ul></div><form className="login-card" onSubmit={submit}><span className="lock-icon"><LockKeyhole/></span><h2>Candidate Login</h2><p>Continue with the demonstration candidate account.</p><label>Email<input type="email" value="aarav@example.test" readOnly/></label><label>Password<input type="password" value="synthetic-demo" readOnly/></label><button className="primary-btn full" type="submit">Sign in to candidate services <ArrowRight size={17}/></button><p className="form-note"><ShieldCheck size={15}/> Demonstration data remains local to this browser.</p><button type="button" className="text-btn" onClick={() => { reset(); }}>Reset demonstration account</button></form></section></main><Footer/></div>
+  const { state, login, register } = useApp(); const navigate = useNavigate(); const location = useLocation()
+  const [mode, setMode] = useState('login'); const [username, setUsername] = useState(''); const [password, setPassword] = useState(''); const [error, setError] = useState(''); const [busy, setBusy] = useState(false)
+  const submit = async e => {
+    e.preventDefault(); setError(''); setBusy(true)
+    try {
+      if (mode === 'register') await register(username, password); else await login(username, password)
+      const target = state.profile.selectedExamIds.length ? '/dashboard' : '/onboarding/exams'
+      navigate(location.state?.from?.pathname || target, { replace: true })
+    } catch (requestError) { setError(requestError.message) } finally { setBusy(false) }
+  }
+  return <div className="auth-page"><Header/><main className="auth-main"><section className="login-panel"><div className="login-intro"><span className="eyebrow">Candidate services</span><h1>NTA examination services portal</h1><p>Create a secure candidate account to access examination workspaces, application milestones, documents, notices, and official resources.</p><ul><li><Check/> Track selected examinations in separate workspaces</li><li><Check/> Keep uploaded documents in private server storage</li><li><Check/> Receive examination updates synchronized from official NTA sources</li></ul></div><form className="login-card" onSubmit={submit}><span className="lock-icon"><LockKeyhole/></span><span className="eyebrow">{mode === 'register' ? 'NEW CANDIDATE' : 'RETURNING CANDIDATE'}</span><h2>{mode === 'register' ? 'Create candidate account' : 'Candidate Login'}</h2><p>{mode === 'register' ? 'Choose a username and a password of at least eight characters.' : 'Sign in with your registered username and password.'}</p>{error && <div className="error-banner" role="alert"><AlertCircle/>{error}</div>}<label>Username<input autoComplete="username" value={username} onChange={e => setUsername(e.target.value)} minLength="3" maxLength="40" pattern="[A-Za-z0-9._-]+" required/></label><label>Password<input type="password" autoComplete={mode === 'register' ? 'new-password' : 'current-password'} value={password} onChange={e => setPassword(e.target.value)} minLength="8" maxLength="128" required/></label><button className="primary-btn full" type="submit" disabled={busy}>{busy ? 'Please wait…' : mode === 'register' ? 'Create account' : 'Sign in to candidate services'} {!busy && <ArrowRight size={17}/>}</button><p className="form-note"><ShieldCheck size={15}/> Passwords are salted and hashed; files are never stored in MongoDB.</p><button type="button" className="text-btn" onClick={() => { setMode(current => current === 'login' ? 'register' : 'login'); setError('') }}>{mode === 'login' ? 'New here? Create an account' : 'Already registered? Sign in'}</button></form></section></main><Footer/></div>
 }
 
 export function Onboarding() {
@@ -491,7 +498,7 @@ export function Dashboard() {
 }
 
 function WorkspaceNav({ exam, section }) {
-  const items = [['desk', 'Exam Desk', GraduationCap], ['journey', 'My Journey', FileCheck2], ['explore', 'Explore More', Search]]
+  const items = [['desk', 'Exam Desk', GraduationCap], ['journey', 'My Journey', FileCheck2]]
   return <nav className="workspace-nav" aria-label={`${exam.shortName} sections`}>{items.map(([id,label,Icon]) => <Link key={id} className={(section || 'desk') === id ? 'active' : ''} to={`/workspace/${exam.slug}/${id}`}><Icon size={18}/>{label}</Link>)}</nav>
 }
 
@@ -500,7 +507,7 @@ export function Workspace() {
   if (!state.profile.selectedExamIds.length) return <Navigate to="/onboarding/exams" replace/>
   if (!exam || !state.profile.selectedExamIds.includes(exam.id)) return <Navigate to="/dashboard" replace/>
   if (state.profile.activeExamId !== exam.id) setTimeout(() => setActive(exam.id), 0)
-  return <WorkspaceShell exam={exam}><main className="workspace-main"><div className="workspace-heading"><div><span className="eyebrow">{exam.level} · {exam.domain}</span><h2>{exam.shortName}</h2><p>{exam.purpose}</p></div><div><Status value={exam.registrationStatus}/><ExternalAnchor className="official-link" href={exam.officialUrl}>Official exam portal</ExternalAnchor></div></div><WorkspaceNav exam={exam} section={section}/>{section === 'journey' ? <Journey exam={exam}/> : section === 'explore' ? <Explore current={exam}/> : <Desk exam={exam}/>}</main><Footer/></WorkspaceShell>
+  return <WorkspaceShell exam={exam}><main className="workspace-main"><div className="workspace-heading"><div><span className="eyebrow">{exam.level} · {exam.domain}</span><h2>{exam.shortName}</h2><p>{exam.purpose}</p></div><div><Status value={exam.registrationStatus}/><ExternalAnchor className="official-link" href={exam.officialUrl}>Official exam portal</ExternalAnchor></div></div><WorkspaceNav exam={exam} section={section}/>{section === 'journey' ? <Journey exam={exam}/> : <Desk exam={exam}/>}</main><Footer/></WorkspaceShell>
 }
 
 function Desk({ exam }) {
@@ -519,13 +526,106 @@ function Explore({ current }) {
   return <div className="workspace-content"><div className="section-head simple"><div><span className="eyebrow">Discover more</span><h3>Other examinations you can track</h3><p>Adding one creates a new workspace without changing your {current.shortName} progress.</p></div><Link className="secondary-btn" to="/manage-exams">Manage exams</Link></div>{added && <div className="success-banner"><CheckCircle2/> {getExam(added).shortName} was added to your workspace.</div>}<div className="exam-grid compact-grid">{other.map(e=><ExamCard key={e.id} exam={e} selected={false} onToggle={()=>{addExam(e.id);setAdded(e.id)}} actionLabel="Add exam"/>)}</div>{!other.length&&<EmptyState title="Everything is in your workspace" body="You have added every examination in this demo catalogue."/>}</div>
 }
 
+function ApplicationSidebar({ exam, steps, index, complete = false }) {
+  return <aside><span className="eyebrow">APPLICATION FORM</span><h1>{exam.shortName}</h1><ol>{steps.map((name, i) => <li className={complete || i < index ? 'complete' : i === index ? 'active' : ''} key={name}><span>{complete || i < index ? <Check/> : i + 1}</span>{name}</li>)}</ol><div className="safe-note"><ShieldCheck/><p>Review all details carefully before payment and final submission. This prototype never sends data to NTA.</p></div></aside>
+}
+
+const cityOptions = ['Delhi', 'Jaipur', 'Lucknow', 'Ahmedabad', 'Bengaluru', 'Chennai', 'Kolkata', 'Mumbai']
+const universityOptions = ['University of Delhi', 'Banaras Hindu University', 'University of Hyderabad', 'Jawaharlal Nehru University']
+const subjectOptions = ['English, General Test, Physics', 'English, Mathematics, Chemistry', 'Hindi, General Test, History', 'English, Biology, Chemistry']
+
 export function ApplicationStep() {
-  const { examSlug, step } = useParams(); const exam = getExam(examSlug); const { state, updateApplication } = useApp(); const nav = useNavigate()
+  const { examSlug, step } = useParams()
+  const exam = getExam(examSlug)
+  const { state, updateApplication } = useApp()
+  const nav = useNavigate()
   if (!exam || !state.profile.selectedExamIds.includes(exam.id)) return <Navigate to="/dashboard" replace/>
-  const steps = getSteps(exam); const app = state.applications[exam.id] || { state:'NOT_STARTED', answers:{} }; const payment = step === 'payment'; const index = payment ? steps.length - 1 : Math.min(Number(step)||0, steps.length-1); const [fullName,setFullName]=useState(app.answers?.fullName || state.profile.name); const [confirmed,setConfirmed]=useState(false); const [payError,setPayError]=useState(false)
-  const save = e => {e.preventDefault(); const last=index===steps.length-1; if(last){updateApplication(exam.id,{state:'PAYMENT_PENDING',currentStep:steps[index],answers:{...app.answers,fullName}});nav(`/apply/${exam.slug}/payment`)} else {updateApplication(exam.id,{state:'IN_PROGRESS',currentStep:steps[index+1],answers:{...app.answers,fullName}});nav(`/apply/${exam.slug}/${index+1}`)}}
-  const pay = success => { if(!success){setPayError(true);updateApplication(exam.id,{state:'PAYMENT_PENDING'});return} updateApplication(exam.id,{state:'SUBMITTED',currentStep:null,paymentReference:`SIM-${exam.shortName.replace(/\W/g,'')}-260823`});nav(`/workspace/${exam.slug}/journey`) }
-  return <div className="app-page"><Header/><main className="application-page"><Link className="back-link" to={`/workspace/${exam.slug}/journey`}><ArrowLeft size={16}/> Back to My Journey</Link><div className="application-layout"><aside><span className="eyebrow">SIMULATED APPLICATION</span><h1>{exam.shortName}</h1><ol>{steps.map((s,i)=><li className={i<index?'complete':i===index?'active':''} key={s}><span>{i<index?<Check/>:i+1}</span>{s}</li>)}</ol><div className="safe-note"><ShieldCheck/><p>No data is sent to NTA. This form exists only to demonstrate the journey.</p></div></aside>{payment ? <section className="form-panel"><span className="form-icon"><CreditCard/></span><span className="eyebrow">PAYMENT RECOVERY DEMO</span><h2>Complete simulated payment</h2><p>Your application answers are saved. Choose an outcome to test payment recovery.</p><div className="payment-summary"><span>Application fee <small>Sample amount</small></span><strong>₹1,000</strong></div>{payError&&<div className="error-banner"><AlertCircle/> Payment could not be completed. No amount was charged. Your application remains saved.</div>}<button className="primary-btn full" onClick={()=>pay(true)}>Simulate successful payment <ArrowRight size={17}/></button><button className="secondary-btn full" onClick={()=>pay(false)}>Simulate failed payment</button></section> : <form className="form-panel" onSubmit={save}><span className="eyebrow">STEP {index+1} OF {steps.length}</span><h2>{steps[index]}</h2><p>Review this synthetic information for the prototype.</p><label>Candidate name<input value={fullName} onChange={e=>setFullName(e.target.value)} required/></label><label>Email address<input value={state.profile.email} readOnly/></label>{index>0&&<label>Sample response<select defaultValue="confirmed"><option value="confirmed">Reviewed and confirmed</option><option>Needs correction</option></select></label>}<label className="check-row"><input type="checkbox" checked={confirmed} onChange={e=>setConfirmed(e.target.checked)}/><span>I confirm that I reviewed this simulated information.</span></label><button className="primary-btn full" disabled={!confirmed||!fullName.trim()}>{index===steps.length-1?'Continue to payment':'Save and continue'} <ArrowRight size={17}/></button><button type="button" className="text-btn" onClick={()=>{updateApplication(exam.id,{state:'IN_PROGRESS',currentStep:steps[index],answers:{...app.answers,fullName}});nav(`/workspace/${exam.slug}/journey`)}}>Save and exit</button></form>}</div></main></div>
+
+  const steps = getSteps(exam)
+  const app = state.applications[exam.id] || { state: 'NOT_STARTED', answers: {} }
+  const payment = step === 'payment'
+  const submitted = step === 'submitted'
+  const index = payment || submitted ? steps.length - 1 : Math.min(Number(step) || 0, steps.length - 1)
+  const [confirmed, setConfirmed] = useState(false)
+  const [paymentStatus, setPaymentStatus] = useState(app.paymentStatus || '')
+  const [documentBusy, setDocumentBusy] = useState('')
+  const [documentError, setDocumentError] = useState('')
+  const [draft, setDraft] = useState({
+    fullName: app.answers?.fullName || state.profile.name,
+    dateOfBirth: app.answers?.dateOfBirth || '2006-07-15',
+    gender: app.answers?.gender || 'Male',
+    email: app.answers?.email || state.profile.email,
+    phone: app.answers?.phone || state.profile.phone,
+    university: app.answers?.university || '',
+    subjects: app.answers?.subjects || '',
+    city1: app.answers?.city1 || '',
+    city2: app.answers?.city2 || '',
+    city3: app.answers?.city3 || '',
+    documents: app.answers?.documents || { photograph: false, signature: false, certificate: false, category: false },
+  })
+  const setField = (key, value) => setDraft(current => ({ ...current, [key]: value }))
+  const saveDraft = patch => updateApplication(exam.id, { answers: { ...app.answers, ...draft }, ...patch })
+  const valid = index === 0 ? draft.fullName.trim() && draft.dateOfBirth && draft.email.trim() && draft.phone.trim()
+    : index === 1 ? draft.university && draft.subjects
+      : index === 2 ? draft.city1 && draft.city2 && draft.city3
+        : index === 3 ? draft.documents.photograph && draft.documents.signature && draft.documents.certificate
+          : confirmed
+  const save = event => {
+    event.preventDefault()
+    if (!valid || !confirmed) return
+    if (index === steps.length - 1) {
+      saveDraft({ state: 'PAYMENT_PENDING', currentStep: steps[index], paymentStatus: '' })
+      nav(`/apply/${exam.slug}/payment`)
+      return
+    }
+    saveDraft({ state: 'IN_PROGRESS', currentStep: steps[index + 1] })
+    nav(`/apply/${exam.slug}/${index + 1}`)
+  }
+  const saveAndExit = () => {
+    saveDraft({ state: 'IN_PROGRESS', currentStep: steps[index] })
+    nav(`/workspace/${exam.slug}/journey`)
+  }
+  const uploadCandidateDocument = async (key, file) => {
+    if (!file) return
+    setDocumentError(''); setDocumentBusy(key)
+    try {
+      const { document } = await api.uploadDocument(file, { purpose: key, examId: exam.id })
+      setDraft(current => ({ ...current, documents: { ...current.documents, [key]: document } }))
+    } catch (error) { setDocumentError(error.message) } finally { setDocumentBusy('') }
+  }
+  const removeCandidateDocument = async key => {
+    const document = draft.documents[key]
+    setDocumentError(''); setDocumentBusy(key)
+    try {
+      if (document?.id) await api.deleteDocument(document.id)
+      setDraft(current => ({ ...current, documents: { ...current.documents, [key]: false } }))
+    } catch (error) { setDocumentError(error.message) } finally { setDocumentBusy('') }
+  }
+  const finishPayment = outcome => {
+    setPaymentStatus(outcome)
+    if (outcome === 'SUCCESS') {
+      updateApplication(exam.id, { state: 'SUBMITTED', currentStep: null, paymentStatus: outcome, answers: { ...app.answers, ...draft }, paymentReference: `SIM-${exam.shortName.replace(/\W/g, '')}-2026`, applicationNumber: `NTA26${exam.id.replace(/\W/g, '').toUpperCase()}1042` })
+      nav(`/apply/${exam.slug}/submitted`)
+    } else updateApplication(exam.id, { state: 'PAYMENT_PENDING', paymentStatus: outcome, answers: { ...app.answers, ...draft } })
+  }
+  const downloadReceipt = () => {
+    const content = `NTA prototype receipt\nApplication: ${app.applicationNumber}\nExamination: ${exam.name}\nCandidate: ${draft.fullName}\nPayment reference: ${app.paymentReference}\nAmount: INR 1,000\nStatus: Success`
+    const url = URL.createObjectURL(new Blob([content], { type: 'text/plain' }))
+    const link = document.createElement('a'); link.href = url; link.download = `${exam.slug}-prototype-receipt.txt`; link.click(); URL.revokeObjectURL(url)
+  }
+
+  if (submitted) return <div className="app-page"><Header/><main className="application-page"><Link className="back-link" to={`/workspace/${exam.slug}/journey`}><ArrowLeft size={16}/> Back to My Journey</Link><div className="application-layout"><ApplicationSidebar exam={exam} steps={steps} index={steps.length} complete/><section className="form-panel submission-confirmation"><span className="submission-icon"><CheckCircle2/></span><span className="eyebrow">APPLICATION CONFIRMED</span><h2>Your application is submitted</h2><p>The simulated payment succeeded and your prototype application has been recorded.</p><dl><div><dt>Application number</dt><dd>{app.applicationNumber}</dd></div><div><dt>Examination</dt><dd>{exam.shortName}</dd></div><div><dt>Candidate</dt><dd>{draft.fullName}</dd></div><div><dt>Payment reference</dt><dd>{app.paymentReference}</dd></div><div><dt>Status</dt><dd><span className="status open">Submitted</span></dd></div></dl><div className="confirmation-actions"><Link className="primary-btn" to={`/workspace/${exam.slug}/journey`}>Open My Journey <ArrowRight size={17}/></Link><button className="secondary-btn" onClick={downloadReceipt}><Download size={17}/> Download receipt</button></div></section></div></main></div>
+
+  if (payment) return <div className="app-page"><Header/><main className="application-page"><Link className="back-link" to={`/workspace/${exam.slug}/journey`}><ArrowLeft size={16}/> Back to My Journey</Link><div className="application-layout"><ApplicationSidebar exam={exam} steps={steps} index={index}/><section className="form-panel payment-panel"><span className="form-icon"><CreditCard/></span><span className="eyebrow">SECURE PAYMENT SIMULATION</span><h2>Complete application payment</h2><p>Your application answers are saved. Choose an outcome to verify the complete recovery experience.</p><div className="payment-summary"><span>Application fee <small>Non-refundable sample amount</small></span><strong>₹1,000</strong></div>{paymentStatus === 'FAILED' && <div className="error-banner"><AlertCircle/> Payment failed. No amount was charged and your answers remain saved. You can retry now.</div>}{paymentStatus === 'CANCELLED' && <div className="warning-banner"><AlertCircle/> Payment was cancelled. Your application is still ready for payment.</div>}<button className="primary-btn full" onClick={() => finishPayment('SUCCESS')}>{paymentStatus ? 'Retry successful payment' : 'Complete payment'} <ArrowRight size={17}/></button><div className="payment-test-actions"><button className="secondary-btn" onClick={() => finishPayment('FAILED')}>Test failed payment</button><button className="secondary-btn" onClick={() => finishPayment('CANCELLED')}>Test cancelled payment</button></div></section></div></main></div>
+
+  let content
+  if (index === 0) content = <div className="application-fields two-column"><label>Candidate name<input value={draft.fullName} onChange={e => setField('fullName', e.target.value)} required/></label><label>Date of birth<input type="date" value={draft.dateOfBirth} onChange={e => setField('dateOfBirth', e.target.value)} required/></label><label>Gender<select value={draft.gender} onChange={e => setField('gender', e.target.value)}><option>Male</option><option>Female</option><option>Other</option><option>Prefer not to say</option></select></label><label>Mobile number<input value={draft.phone} onChange={e => setField('phone', e.target.value)} required/></label><label>Email address<input type="email" value={draft.email} onChange={e => setField('email', e.target.value)} required/></label><label>Category<select defaultValue="General"><option>General</option><option>OBC-NCL</option><option>SC</option><option>ST</option><option>PwBD</option></select></label></div>
+  else if (index === 1) content = <div className="application-fields two-column"><label>University / institution<select value={draft.university} onChange={e => setField('university', e.target.value)} required><option value="">Select university</option>{universityOptions.map(option => <option key={option}>{option}</option>)}</select></label><label>Subjects / domain<select value={draft.subjects} onChange={e => setField('subjects', e.target.value)} required><option value="">Select subject combination</option>{subjectOptions.map(option => <option key={option}>{option}</option>)}</select></label><div className="form-info"><GraduationCap/><span>You can update these prototype choices before the review step.</span></div></div>
+  else if (index === 2) content = <div className="application-fields"><p className="field-help">Select preferred examination cities in order. Final allocation is based on availability.</p>{[1, 2, 3].map(number => <label key={number}>City preference {number}<select value={draft[`city${number}`]} onChange={e => setField(`city${number}`, e.target.value)} required><option value="">Select city</option>{cityOptions.filter(city => ![draft.city1, draft.city2, draft.city3].includes(city) || draft[`city${number}`] === city).map(city => <option key={city}>{city}</option>)}</select></label>)}<div className="form-info"><MapPin/><span>One of your preferred cities may be allotted based on capacity.</span></div></div>
+  else if (index === 3) content = <div className="document-list">{documentError && <div className="error-banner" role="alert"><AlertCircle/>{documentError}</div>}{[['photograph', 'Photograph', 'JPG / JPEG · maximum 10 MB', 'image/jpeg,image/png'], ['signature', 'Signature', 'JPG / JPEG · maximum 10 MB', 'image/jpeg,image/png'], ['certificate', 'Class 10 certificate', 'PDF · maximum 10 MB', 'application/pdf'], ['category', 'Category certificate (if applicable)', 'PDF · maximum 10 MB', 'application/pdf']].map(([key, title, meta, accept], documentIndex) => { const attached = draft.documents[key]; const busy = documentBusy === key; return <article key={key} className={attached ? 'uploaded' : ''}><span><FileText/></span><div><strong>{title}{documentIndex < 3 && <em> *</em>}</strong><small>{attached ? `${attached.originalName} · stored securely` : meta}</small></div>{attached ? <button type="button" disabled={busy} className="secondary-btn small" onClick={() => removeCandidateDocument(key)}>{busy ? 'Removing…' : <><Check/> Remove</>}</button> : <label className="secondary-btn small document-upload-control">{busy ? 'Uploading…' : <><Download/> Upload</>}<input type="file" accept={accept} disabled={busy} onChange={event => uploadCandidateDocument(key, event.target.files?.[0])}/></label>}</article> })}</div>
+  else content = <div className="application-review"><h3>Application summary</h3>{[['Personal details', draft.fullName], ['University & subjects', `${draft.university || 'Not selected'} · ${draft.subjects || 'Not selected'}`], ['Exam cities', [draft.city1, draft.city2, draft.city3].filter(Boolean).join(', ') || 'Not selected'], ['Documents', `${Object.values(draft.documents).filter(Boolean).length} files attached`]].map(([label, value], rowIndex) => <div key={label}><strong>{label}</strong><span>{value}</span><button type="button" onClick={() => nav(`/apply/${exam.slug}/${rowIndex}`)}>Edit</button></div>)}<h3>Payment details</h3><div className="review-total"><span>Application fee <small>Non-refundable prototype amount</small></span><strong>₹1,000</strong></div></div>
+
+  return <div className="app-page"><Header/><main className="application-page"><Link className="back-link" to={`/workspace/${exam.slug}/journey`}><ArrowLeft size={16}/> Back to My Journey</Link><div className="application-layout"><ApplicationSidebar exam={exam} steps={steps} index={index}/><form className="form-panel" onSubmit={save}><span className="eyebrow">STEP {index + 1} OF {steps.length}</span><h2>{steps[index]}</h2><p>{index === 4 ? 'Review the complete application before proceeding to the simulated payment.' : 'Complete the required information and confirm it before continuing.'}</p>{content}<label className="check-row"><input type="checkbox" checked={confirmed} onChange={e => setConfirmed(e.target.checked)}/><span>I confirm that I reviewed this information and it is correct.</span></label><button className="primary-btn application-continue" disabled={!valid || !confirmed}>{index === steps.length - 1 ? 'Continue to payment' : 'Save and continue'} <ArrowRight size={17}/></button><button type="button" className="text-btn" onClick={saveAndExit}>Save and exit</button></form></div></main></div>
 }
 
 export function ManageExams() {
@@ -537,7 +637,7 @@ function PublicLayout({children}) { return <div className="public-page"><Header/
 
 export function ExamCatalogue() { const [q,setQ]=useState(''); const filtered=exams.filter(e=>`${e.name} ${e.domain} ${e.purpose}`.toLowerCase().includes(q.toLowerCase())); return <PublicLayout><div className="public-title"><span className="eyebrow">Examinations</span><h1>NTA examination catalogue</h1><p>Search national-level examinations conducted by NTA and proceed to the respective official portals for authoritative information.</p></div><label className="search-field standalone"><Search/><span className="sr-only">Search exams</span><input value={q} onChange={e=>setQ(e.target.value)} placeholder="Search examination name, domain, or purpose"/></label><div className="exam-grid">{filtered.map(e=><ExamCard key={e.id} exam={e} selected={false} onToggle={()=>{}}/>)}</div></PublicLayout> }
 
-export function Notices() { const [examId,setExamId]=useState('all'); const notices=deepExams.filter(e=>examId==='all'||e.id===examId).flatMap(e=>(e.notices||[]).map(n=>({...n,exam:e}))); return <PublicLayout><div className="public-title"><span className="eyebrow">Public notices</span><h1>Examination notices and announcements</h1><p>Review examination-wise announcements and verify final instructions on the corresponding official NTA portal.</p></div><div className="filter-bar one"><select value={examId} onChange={e=>setExamId(e.target.value)} aria-label="Filter by exam"><option value="all">All examinations</option>{deepExams.map(e=><option value={e.id} key={e.id}>{e.shortName}</option>)}</select></div><section className="panel public-list">{notices.map(n=><article key={`${n.exam.id}-${n.title}`}><span className="notice-icon"><Megaphone/></span><div><span className="notice-type">{n.exam.shortName} · {n.type}</span><h3>{n.title}</h3><small>{n.date} · Candidate notice</small></div><ExternalAnchor href={n.exam.officialUrl}>Verify officially</ExternalAnchor></article>)}</section></PublicLayout> }
+export function Notices() { const [examId,setExamId]=useState('all'); const fallback=useMemo(()=>deepExams.flatMap(e=>(e.notices||[]).map(n=>({...n,id:`${e.id}-${n.title}`,examName:e.shortName,sourceUrl:e.officialUrl}))),[]); const official=useOfficialNotices(fallback); const examNames=[...new Set(official.items.map(n=>n.type))]; const notices=official.items.filter(n=>examId==='all'||n.type===examId); return <PublicLayout><div className="public-title"><span className="eyebrow">Public notices</span><h1>Examination notices and announcements</h1><p>Official NTA updates are synchronized automatically and retain a direct source link and retrieval timestamp.</p>{official.live&&<span className="official-sync-note"><CheckCircle2/> Official source synchronized {official.sync?.completedAt&&new Date(official.sync.completedAt).toLocaleString('en-IN')}</span>}</div><div className="filter-bar one"><select value={examId} onChange={e=>setExamId(e.target.value)} aria-label="Filter by exam"><option value="all">All examinations</option>{examNames.map(name=><option value={name} key={name}>{name}</option>)}</select></div><section className="panel public-list">{notices.map(n=><article key={n.id}><span className="notice-icon"><Megaphone/></span><div><span className="notice-type">{n.type}</span><h3>{n.title}</h3><small>{new Date(n.date).toLocaleString('en-IN')} · {n.verifiedOfficialSource?'Official source':'Curated fallback'}</small></div><ExternalAnchor href={n.sourceUrl}>Verify officially</ExternalAnchor></article>)}</section></PublicLayout> }
 
 export function Help() { return <PublicLayout><div className="public-title"><span className="eyebrow">Help desk</span><h1>Candidate support resources</h1><p>Use official channels for application, eligibility, payment, admit card, and result-related questions.</p></div><div className="help-grid"><section className="panel"><HelpCircle/><h2>Official NTA support</h2><p>Find current exam-specific contact details on NTA’s directory.</p><ExternalAnchor className="primary-btn" href="https://www.nta.ac.in/ContactUs">Open official directory</ExternalAnchor></section><section className="panel"><PlayCircle/><h2>Mock test help</h2><p>Access computer-based test practice resources.</p><ExternalAnchor className="secondary-btn" href="https://nta.ac.in/Quiz">Open mock tests</ExternalAnchor></section><section className="panel"><BookOpen/><h2>Abhyas guidance</h2><p>Access practice tests and performance review resources.</p><ExternalAnchor className="secondary-btn" href="https://www.nta.ac.in/Abhyas/help">Open Abhyas help</ExternalAnchor></section></div></PublicLayout> }
 

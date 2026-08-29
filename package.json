@@ -5,17 +5,24 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:api": "node --watch server/index.js",
+    "server": "node server/index.js",
+    "test:api": "node server/test-api.js",
+    "test:ui": "node scripts/verify-auth-ui.cjs",
     "build": "vite build",
     "preview": "vite preview",
     "deploy": "vite build"
   },
   "dependencies": {
     "@vitejs/plugin-react": "latest",
+    "cheerio": "1.1.2",
+    "express": "5.1.0",
     "lucide-react": "latest",
-    "vite": "latest",
+    "mongodb": "6.20.0",
+    "multer": "2.0.2",
     "react": "latest",
     "react-dom": "latest",
-    "react-router-dom": "latest"
-  },
-  "devDependencies": {}
+    "react-router-dom": "latest",
+    "vite": "latest"
+  }
 }

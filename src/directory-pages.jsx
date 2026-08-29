@@ -8,6 +8,7 @@ import {
 } from 'lucide-react'
 import { Footer, Header, ExternalAnchor, Status } from './components'
 import { ntaExams, ntaResources, examCategories, getExamsByDomain } from './nta-directory-data'
+import { useOfficialExams } from './useOfficialData'
 
 const iconMap = {
   Home, Info, Phone, PlayCircle, BookOpen, HelpCircle, FileCheck2, ShieldCheck,
@@ -148,8 +149,10 @@ export function ResourceDirectory() {
 export function ExamsByCategory() {
   const [selectedCategory, setSelectedCategory] = useState('all')
   const [searchQuery, setSearchQuery] = useState('')
+  const official = useOfficialExams(ntaExams)
+  const directoryExams = official.items
 
-  const filtered = ntaExams.filter(exam => {
+  const filtered = directoryExams.filter(exam => {
     const matchesSearch = searchQuery === '' ||
       `${exam.name} ${exam.shortName} ${exam.domain} ${exam.purpose}`.toLowerCase().includes(searchQuery.toLowerCase())
 
@@ -169,7 +172,7 @@ export function ExamsByCategory() {
       <div className="public-title">
         <span className="eyebrow">Complete examination catalog</span>
         <h1>All NTA Examinations by Category</h1>
-        <p>Browse {ntaExams.length} examinations organized by domain. Each exam links to its official portal for authoritative information.</p>
+        <p>Browse {directoryExams.length} examinations organized by domain. Each exam links to its official portal for authoritative information.</p>{official.live&&<span className="official-sync-note"><CheckCircle2/> Official NTA listings synchronized</span>}
       </div>
 
       <label className="search-field standalone">
@@ -187,10 +190,10 @@ export function ExamsByCategory() {
           onClick={() => setSelectedCategory('all')}
           className={selectedCategory === 'all' ? 'primary-btn small' : 'secondary-btn small'}
         >
-          All Categories ({ntaExams.length})
+          All Categories ({directoryExams.length})
         </button>
         {examCategories.map(cat => {
-          const count = ntaExams.filter(e => getExamsByDomain(e.domain) === cat.id).length
+          const count = directoryExams.filter(e => getExamsByDomain(e.domain) === cat.id).length
           return (
             <button
               key={cat.id}

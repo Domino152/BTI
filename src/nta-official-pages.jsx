@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useParams } from 'react-router-dom'
 import {
   AlertCircle, ArrowRight, Award, BookOpen, Briefcase, Building, Calendar,
   CheckCircle2, Download, ExternalLink, FileText, Globe, GraduationCap,
@@ -18,8 +18,29 @@ function PublicLayout({ children }) {
   )
 }
 
+function downloadPrototypeFile(title, body) {
+  const blob = new Blob([`${title}\n\n${body}\n\nPrototype document — verify all information on the linked official NTA portal.`], { type: 'text/plain;charset=utf-8' })
+  const url = URL.createObjectURL(blob)
+  const anchor = document.createElement('a')
+  anchor.href = url
+  anchor.download = `${title.toLowerCase().replace(/[^a-z0-9]+/g, '-')}.txt`
+  anchor.click()
+  URL.revokeObjectURL(url)
+}
+
 // ABOUT US PAGE
 export function AboutUs() {
+  const { section = 'about' } = useParams()
+  const sections = [
+    ['about', 'About NTA', Home], ['vision', 'Vision & Mission', Eye], ['objectives', 'Objectives', Target],
+    ['functions', 'Functions', CheckCircle2], ['governing-body', 'Governing Body', Users]
+  ]
+  const detail = {
+    vision: ['Vision & Mission', 'A fair, trusted and technology-led national assessment system.', ['Deliver valid and reliable assessments', 'Use modern technology and international best practices', 'Make candidate journeys transparent and accessible']],
+    objectives: ['Key Objectives', 'The outcomes NTA is designed to deliver across the assessment lifecycle.', ['Create uniform examination standards', 'Strengthen question design and psychometrics', 'Improve security, transparency and candidate service', 'Build reusable digital examination infrastructure']],
+    functions: ['Functions of NTA', 'Core institutional responsibilities of the testing agency.', ['Plan and deliver computer-based examinations', 'Publish notices, answer keys and scorecards', 'Coordinate test centres and candidate support', 'Conduct research in assessment and evaluation']],
+    'governing-body': ['Governing Body', 'Institutional oversight and accountability.', ['Chairperson and domain experts', 'Representatives of the Ministry of Education', 'Academic, administrative and technology leadership', 'Transparent review of policy and operations']]
+  }[section]
   return (
     <PublicLayout>
       <div className="public-title">
@@ -28,7 +49,13 @@ export function AboutUs() {
         <p>Premier testing organization for conducting efficient, transparent and international standards-based examinations for admissions to higher education institutions.</p>
       </div>
 
-      <div style={{ maxWidth: '900px', margin: '0 auto' }}>
+      <div className="institution-layout">
+        <aside className="institution-sidebar" aria-label="About NTA sections"><h2>About Us</h2>{sections.map(([id,label,Icon]) => <Link key={id} className={section === id ? 'active' : ''} to={id === 'about' ? '/about-us' : `/about-us/${id}`}><Icon size={17}/>{label}<ArrowRight size={14}/></Link>)}</aside>
+        <div className="institution-content">
+        {detail ? <>
+          <section className="panel institution-detail"><span className="institution-icon"><Info size={25}/></span><div><span className="eyebrow">Institutional profile</span><h2>{detail[0]}</h2><p>{detail[1]}</p></div></section>
+          <section className="panel"><h3>At a glance</h3><ul className="official-check-list">{detail[2].map(item => <li key={item}><CheckCircle2 size={19}/><span>{item}</span></li>)}</ul><ExternalAnchor href="https://www.nta.ac.in/About" className="primary-btn">View official information</ExternalAnchor></section>
+        </> : <>
         <section className="panel" style={{ marginBottom: '20px' }}>
           <div style={{ display: 'flex', gap: '20px', alignItems: 'start', marginBottom: '24px' }}>
             <div style={{
@@ -133,6 +160,8 @@ export function AboutUs() {
             Visit official About page
           </ExternalAnchor>
         </section>
+        </>}
+        </div>
       </div>
     </PublicLayout>
   )
@@ -147,37 +176,37 @@ export function RTI() {
       title: 'Right to Information Act, 2005',
       description: 'Complete information about RTI Act and how to file applications',
       icon: Scale,
-      color: '#2d7385'
+      color: '#2d7385', href: 'https://www.nta.ac.in/RTI'
     },
     {
       title: 'RTI Application Form',
       description: 'Download and submit RTI application to NTA',
       icon: FileText,
-      color: '#3467d6'
+      color: '#3467d6', href: 'https://www.nta.ac.in/RTI'
     },
     {
       title: 'Public Information Officers',
       description: 'Contact details of PIOs and Appellate Authorities',
       icon: Users,
-      color: '#168769'
+      color: '#168769', href: 'https://www.nta.ac.in/RTI/Officers'
     },
     {
       title: 'Suo Moto Disclosures',
       description: 'Information disclosed proactively under Section 4(1)(b)',
       icon: Eye,
-      color: '#7656bd'
+      color: '#7656bd', href: 'https://www.nta.ac.in/RTI/SuoMoto'
     },
     {
       title: 'RTI Applications Status',
       description: 'Track your RTI application status online',
       icon: Search,
-      color: '#8a4b63'
+      color: '#8a4b63', href: 'https://rtionline.gov.in/'
     },
     {
       title: 'RTI Fees & Payment',
       description: 'Information on RTI application fees and payment methods',
       icon: FileSearch,
-      color: '#8b4513'
+      color: '#8b4513', href: 'https://rtionline.gov.in/'
     }
   ]
 
@@ -202,7 +231,7 @@ export function RTI() {
           </div>
         </section>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', marginBottom: '32px' }}>
+        <div className="rti-card-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', marginBottom: '32px' }}>
           {rtiSections.map((section, idx) => {
             const Icon = section.icon
             return (
@@ -229,9 +258,9 @@ export function RTI() {
                 <p style={{ fontSize: '13px', color: 'var(--muted)', lineHeight: 1.5, margin: '0 0 16px' }}>
                   {section.description}
                 </p>
-                <button className="secondary-btn small" style={{ marginTop: 'auto' }}>
+                <ExternalAnchor href={section.href} className="secondary-btn small" style={{ marginTop: 'auto' }}>
                   Learn more <ArrowRight size={15} />
-                </button>
+                </ExternalAnchor>
               </article>
             )
           })}
@@ -275,7 +304,7 @@ export function RTI() {
             ))}
           </ol>
           <div style={{ marginTop: '24px', paddingTop: '24px', borderTop: '1px solid var(--line)' }}>
-            <ExternalAnchor href="https://www.nta.ac.in/rti" className="primary-btn">
+            <ExternalAnchor href="https://www.nta.ac.in/RTI" className="primary-btn">
               Visit official RTI portal
             </ExternalAnchor>
           </div>
@@ -287,6 +316,8 @@ export function RTI() {
 
 // TENDER PAGE
 export function Tender() {
+  const [filter, setFilter] = useState('All')
+  const [expanded, setExpanded] = useState(null)
   const tenders = [
     {
       title: 'Supply of Computer-Based Test Infrastructure',
@@ -309,7 +340,7 @@ export function Tender() {
       refNo: 'NTA/TENDER/2026/003',
       date: '05 August 2026',
       deadline: '20 August 2026',
-      status: 'Closed',
+      status: 'Open',
       category: 'IT Services'
     },
     {
@@ -325,10 +356,11 @@ export function Tender() {
       refNo: 'NTA/TENDER/2026/005',
       date: '28 July 2026',
       deadline: '05 September 2026',
-      status: 'Open',
+      status: 'Archived',
       category: 'Academic'
     }
   ]
+  const filteredTenders = filter === 'All' ? tenders : tenders.filter(t => filter === 'Closed' ? t.status === 'Closed' || t.status === 'Closing Soon' : t.status === filter)
 
   return (
     <PublicLayout>
@@ -345,20 +377,17 @@ export function Tender() {
             <div>
               <strong style={{ fontSize: '15px', display: 'block', marginBottom: '6px' }}>Important Notice</strong>
               <p style={{ fontSize: '13px', color: 'var(--muted)', lineHeight: 1.6, margin: 0 }}>
-                All tender documents are sample data for this prototype. For actual tender notifications and participation, please visit the official NTA procurement portal at <a href="https://www.nta.ac.in/tenders" target="_blank" rel="noreferrer" style={{ color: 'var(--blue)', fontWeight: 700 }}>nta.ac.in/tenders</a>
+                All tender documents are sample data for this prototype. For actual tender notifications and participation, please visit the official NTA procurement portal at <a href="https://www.nta.ac.in/Tender" target="_blank" rel="noreferrer" style={{ color: 'var(--blue)', fontWeight: 700 }}>nta.ac.in/Tender</a>
               </p>
             </div>
           </div>
         </div>
 
-        <div style={{ display: 'flex', gap: '12px', marginBottom: '24px', flexWrap: 'wrap' }}>
-          <button className="primary-btn small">All Tenders</button>
-          <button className="secondary-btn small">Open</button>
-          <button className="secondary-btn small">Closed</button>
-          <button className="secondary-btn small">Archived</button>
+        <div className="official-filter-tabs" role="tablist" aria-label="Filter tenders">
+          {['All','Open','Closed','Archived'].map(label => <button key={label} role="tab" aria-selected={filter === label} onClick={() => setFilter(label)} className={filter === label ? 'primary-btn small' : 'secondary-btn small'}>{label === 'All' ? 'All Tenders' : label} ({label === 'All' ? tenders.length : tenders.filter(t => label === 'Closed' ? t.status === 'Closed' || t.status === 'Closing Soon' : t.status === label).length})</button>)}
         </div>
 
-        {tenders.map((tender, idx) => (
+        {filteredTenders.map((tender, idx) => (
           <article key={idx} className="panel" style={{ marginBottom: '16px' }}>
             <div style={{ display: 'flex', gap: '18px', alignItems: 'start' }}>
               <div style={{
@@ -395,20 +424,21 @@ export function Tender() {
                   </span>
                 </div>
                 <div style={{ display: 'flex', gap: '10px' }}>
-                  <button className="secondary-btn small">
+                  <button className="secondary-btn small" onClick={() => downloadPrototypeFile(tender.title, `${tender.refNo}\nPublished: ${tender.date}\nDeadline: ${tender.deadline}`)}>
                     <Download size={15} /> Download document
                   </button>
-                  <button className="secondary-btn small">
+                  <button className="secondary-btn small" aria-expanded={expanded === tender.refNo} onClick={() => setExpanded(expanded === tender.refNo ? null : tender.refNo)}>
                     View details <ArrowRight size={15} />
                   </button>
                 </div>
+                {expanded === tender.refNo && <div className="tender-expanded"><strong>Prototype procurement summary</strong><p>This simulated listing demonstrates the information hierarchy, lifecycle state, deadline and document access pattern. Confirm eligibility and the complete scope on the official portal before taking any action.</p></div>}
               </div>
             </div>
           </article>
         ))}
 
         <div style={{ textAlign: 'center', marginTop: '32px', paddingTop: '32px', borderTop: '1px solid var(--line)' }}>
-          <ExternalAnchor href="https://www.nta.ac.in/tenders" className="primary-btn">
+          <ExternalAnchor href="https://www.nta.ac.in/Tender" className="primary-btn">
             Visit official tender portal
           </ExternalAnchor>
         </div>
@@ -506,7 +536,7 @@ export function Downloads() {
                   </div>
                 </div>
               </div>
-              <button className="secondary-btn small">
+              <button className="secondary-btn small" onClick={() => downloadPrototypeFile(item.title, `${item.exam}\nPublished: ${item.date}\nDisplay size: ${item.size}`)}>
                 <Download size={16} /> Download
               </button>
             </article>
@@ -538,6 +568,8 @@ export function Downloads() {
 // CONTACT US PAGE
 export function ContactUs() {
   const [selectedTopic, setSelectedTopic] = useState('')
+  const [form, setForm] = useState({ name: '', email: '', message: '' })
+  const [submitted, setSubmitted] = useState(false)
 
   const contactMethods = [
     {
@@ -545,28 +577,28 @@ export function ContactUs() {
       icon: Mail,
       color: '#3467d6',
       details: ['General: info@nta.ac.in', 'Technical: tech.support@nta.ac.in', 'Grievance: grievance@nta.ac.in'],
-      action: 'Send email'
+      action: 'Send email', href: 'mailto:genadmin@nta.ac.in'
     },
     {
       title: 'Phone Support',
       icon: Phone,
       color: '#168769',
       details: ['Helpline: 011-4075 9000', 'Monday to Friday', '10:00 AM - 5:00 PM'],
-      action: 'Call now'
+      action: 'Call now', href: 'tel:01169227700'
     },
     {
       title: 'Head Office',
       icon: Building,
       color: '#7656bd',
       details: ['National Testing Agency', 'Plot No. 27, Sector 20', 'Dwarka, New Delhi - 110077'],
-      action: 'Get directions'
+      action: 'Get directions', href: 'https://maps.google.com/?q=National+Testing+Agency+New+Delhi'
     },
     {
       title: 'Online Grievance',
       icon: HelpCircle,
       color: '#8a4b63',
       details: ['Submit complaints online', 'Track grievance status', 'Resolution within 30 days'],
-      action: 'File grievance'
+      action: 'File grievance', href: 'https://www.nta.ac.in/ContactUs'
     }
   ]
 
@@ -588,7 +620,7 @@ export function ContactUs() {
       </div>
 
       <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '18px', marginBottom: '32px' }}>
+        <div className="contact-method-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '18px', marginBottom: '32px' }}>
           {contactMethods.map((method, idx) => {
             const Icon = method.icon
             return (
@@ -615,9 +647,9 @@ export function ContactUs() {
                     </li>
                   ))}
                 </ul>
-                <button className="secondary-btn small">
+                <a className="secondary-btn small" href={method.href} target={method.href.startsWith('http') ? '_blank' : undefined} rel="noreferrer">
                   {method.action} <ArrowRight size={15} />
-                </button>
+                </a>
               </article>
             )
           })}
@@ -630,7 +662,7 @@ export function ContactUs() {
           </p>
           <div style={{ display: 'grid', gap: '10px' }}>
             {examContacts.map((contact, idx) => (
-              <div key={idx} style={{
+              <div key={idx} className="exam-contact-row" style={{
                 display: 'grid',
                 gridTemplateColumns: '140px 1fr 1fr',
                 gap: '16px',
@@ -653,11 +685,14 @@ export function ContactUs() {
 
         <section className="panel">
           <h3 style={{ fontSize: '22px', marginBottom: '18px' }}>Send us a Message</h3>
-          <form style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <form style={{ display: 'flex', flexDirection: 'column', gap: '16px' }} onSubmit={e => { e.preventDefault(); setSubmitted(true) }}>
             <label style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
               <span style={{ fontSize: '12px', fontWeight: 700, color: '#4b5870' }}>Your Name</span>
               <input
                 type="text"
+                required
+                value={form.name}
+                onChange={e => setForm({ ...form, name: e.target.value })}
                 placeholder="Enter your full name"
                 style={{
                   height: '46px',
@@ -672,6 +707,9 @@ export function ContactUs() {
               <span style={{ fontSize: '12px', fontWeight: 700, color: '#4b5870' }}>Email Address</span>
               <input
                 type="email"
+                required
+                value={form.email}
+                onChange={e => setForm({ ...form, email: e.target.value })}
                 placeholder="your.email@example.com"
                 style={{
                   height: '46px',
@@ -707,6 +745,9 @@ export function ContactUs() {
             <label style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
               <span style={{ fontSize: '12px', fontWeight: 700, color: '#4b5870' }}>Your Message</span>
               <textarea
+                required
+                value={form.message}
+                onChange={e => setForm({ ...form, message: e.target.value })}
                 placeholder="Describe your query in detail..."
                 rows="5"
                 style={{
@@ -722,6 +763,7 @@ export function ContactUs() {
             <button type="submit" className="primary-btn" style={{ alignSelf: 'flex-start' }}>
               Submit message <ArrowRight size={17} />
             </button>
+            {submitted && <div className="prototype-success" role="status"><CheckCircle2 size={20}/><div><strong>Message captured in this prototype</strong><span>No message was sent. For real support, use the official NTA contact channel linked below.</span></div></div>}
           </form>
         </section>
 

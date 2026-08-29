@@ -2,5 +2,9 @@ node_modules/
 .pnpm-store/
 dist/
 artifacts/
+storage/documents/
 *.log
 .claude/
+.env
+.env.*
+!.env.example

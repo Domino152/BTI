@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, NavLink, useNavigate } from 'react-router-dom'
-import { Accessibility, ArrowRight, CalendarDays, Check, ChevronLeft, ChevronRight, Clock, ExternalLink, Globe2, Menu, Plus, UserRound, X } from 'lucide-react'
+import { Accessibility, ArrowRight, AtSign, Check, ChevronDown, ChevronLeft, ChevronRight, ExternalLink, Globe2, Link2, MapPin, Menu, Phone, PlayCircle, Plus, Share2, UserRound, X } from 'lucide-react'
 import { exams } from './data'
 import { useApp } from './state/AppState'
 
@@ -34,8 +34,8 @@ function formatTime(d) {
 function LiveDateTime() {
   const now = useLiveClock()
   return <div className="nta-date-chip desktop-only" aria-hidden="true">
-    <small><CalendarDays size={16}/> {formatDate(now)}</small>
-    <strong><Clock size={15}/> {formatTime(now)} IST</strong>
+    <small>{formatDate(now)}</small>
+    <strong>{formatTime(now)} IST</strong>
   </div>
 }
 
@@ -64,8 +64,9 @@ export function Header({ workspace = false }) {
     </div>
     <div className="nav-actions nta-header-right">
       <LiveDateTime/>
+      {!workspace && <button className="nta-language desktop-only" type="button" aria-label="Language selector"><Globe2 size={15}/> English <ChevronDown size={14}/></button>}
       {state.authenticated
-        ? <button className="secondary-btn desktop-login" onClick={leave}>Sign out <ArrowRight size={15}/></button>
+        ? <button className="nta-profile-pill desktop-login" onClick={leave} title="Sign out"><span>AM</span>{state.profile.name} <ChevronDown size={14}/></button>
         : <Link className="primary-btn desktop-login" to="/login"><UserRound size={15}/> Sign In / Login <ArrowRight size={15}/></Link>}
       <button className="icon-btn menu-btn nta-menu-btn" aria-label={open ? 'Close menu' : 'Open menu'} aria-expanded={open} onClick={() => setOpen(!open)}>{open ? <X/> : <Menu/>}</button>
     </div>
@@ -73,7 +74,39 @@ export function Header({ workspace = false }) {
 }
 
 export function Footer() {
-  return <footer className="footer"><div className="footer-inner"><div><Brand/><p>National Testing Agency interface redesign concept for a clearer, official examination services experience.</p></div><div className="footer-links"><a href="https://nta.ac.in/" target="_blank" rel="noreferrer">Official NTA <ExternalLink size={14}/></a><Link to="/exams-by-category">All Exams</Link><Link to="/resources">Resources</Link><Link to="/about-us">About</Link><Link to="/help">Help</Link></div></div><div className="footer-bottom">© 2026 National Testing Agency. Interface prototype for demonstration.</div></footer>
+  return <footer className="nta-footer" aria-labelledby="shared-footer-title">
+    <h2 className="sr-only" id="shared-footer-title">National Testing Agency footer</h2>
+    <div className="nta-footer-top">
+      <div className="nta-footer-col nta-footer-brand">
+        <Brand/>
+        <p>An autonomous testing body under the Department of Higher Education, Ministry of Education, Government of India.</p>
+        <div className="nta-footer-social" aria-label="Social links">
+          <a href="https://www.facebook.com/NTA.Official" target="_blank" rel="noreferrer" aria-label="Facebook"><Share2 size={16}/></a>
+          <a href="https://twitter.com/NTA_Exams" target="_blank" rel="noreferrer" aria-label="X"><AtSign size={16}/></a>
+          <a href="https://www.youtube.com/@NationalTestingAgency" target="_blank" rel="noreferrer" aria-label="YouTube"><PlayCircle size={16}/></a>
+          <a href="https://www.nta.ac.in/" target="_blank" rel="noreferrer" aria-label="Official website"><Link2 size={16}/></a>
+        </div>
+      </div>
+      <div className="nta-footer-col">
+        <h4>Candidate Services</h4>
+        <ul><li><Link to="/mock-test">Mock Test</Link></li><li><Link to="/abhyas">Abhyas</Link></li><li><Link to="/exams-by-category">All Examinations</Link></li><li><Link to="/notices">Results & notices</Link></li><li><Link to="/downloads">Downloads</Link></li><li><Link to="/help">Help Center</Link></li></ul>
+      </div>
+      <div className="nta-footer-col">
+        <h4>Contact Us</h4>
+        <div className="nta-footer-contact">
+          <div className="item"><span className="ic"><MapPin size={14}/></span><div><strong>Head Office</strong>First Floor, NSIC-MDBP Building,<br/>Okhla Industrial Estate,<br/>New Delhi 110020</div></div>
+          <div className="item"><span className="ic"><Phone size={14}/></span><div><strong>Phone</strong><a href="tel:01169227700">011-69227700</a></div></div>
+          <div className="item"><span className="ic"><AtSign size={14}/></span><div><strong>Email</strong><a href="mailto:genadmin@nta.ac.in">genadmin@nta.ac.in</a></div></div>
+        </div>
+      </div>
+      <div className="nta-footer-col">
+        <h4>Location</h4>
+        <div className="nta-footer-map"><div className="map-art"><span className="pin"><MapPin size={28}/></span></div><a href="https://maps.google.com/?q=NSIC-MDBP+Building+Okhla+New+Delhi" target="_blank" rel="noreferrer">View larger map <ArrowRight size={12}/></a></div>
+        <div className="nta-footer-ministry"><span className="badge"/><div className="text"><strong>Ministry of Education</strong><small>Government of India</small></div></div>
+      </div>
+    </div>
+    <div className="nta-footer-bottom"><div className="nta-footer-bottom-inner"><nav aria-label="Footer navigation"><a href="https://www.nta.ac.in/" target="_blank" rel="noreferrer">Official NTA</a><Link to="/exams-by-category">All Exams</Link><Link to="/resources">Resources</Link><Link to="/about-us">About</Link><Link to="/rti">RTI</Link></nav><div>© 2026 National Testing Agency. All rights reserved.</div></div><p className="nta-footer-disclaimer">Independent interface prototype for demonstration. Official actions continue on linked Government of India and NTA portals.</p></div>
+  </footer>
 }
 
 export function Status({ value }) { return <span className={`status ${value}`}>{value === 'sample' ? 'Sample data' : value}</span> }
