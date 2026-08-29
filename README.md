@@ -19,18 +19,20 @@ For local-only evaluation, set `ALLOW_MEMORY_DB=true`. Documents default to `sto
 - Official public exam and notice data is synchronized from `https://www.nta.ac.in/` every six hours by default. Each record retains its official source URL, fetched timestamp, and verification marker.
 - The manual sync endpoint is `POST /api/sync/nta` with an `X-Sync-Secret` header.
 
-## Railway Backend
+## Render Backend
 
 1. Push this repository to `https://github.com/Domino152/BTI`.
-2. In Railway, create a new project and choose **Deploy from GitHub repo**.
+2. In Render, create a new **Web Service** from the GitHub repo.
 3. Select `Domino152/BTI`. Keep the root directory as the repository root.
-4. Add a MongoDB database to the same Railway project.
-5. Add a persistent volume to the backend service and mount it at `/data`.
-6. In the backend service variables, add:
+4. Set **Runtime** to Node, **Build Command** to `pnpm install --frozen-lockfile`, and **Start Command** to `node server/index.js`.
+5. Set **Health Check Path** to `/api/health`.
+6. Add a MongoDB Atlas connection string or a hosted MongoDB connection string.
+7. If uploads must survive deploys/restarts, add a paid Render persistent disk mounted at `/data`. Without a persistent disk, Render's filesystem is ephemeral and uploaded documents can be lost.
+8. In the backend service variables, add:
 
 ```env
 NODE_ENV=production
-MONGODB_URI=${{MongoDB.MONGO_URL}}
+MONGODB_URI=mongodb+srv://USER:PASSWORD@CLUSTER.mongodb.net/?retryWrites=true&w=majority
 MONGODB_DB_NAME=nta_portal
 DOCUMENT_STORAGE_PATH=/data/documents
 FRONTEND_ORIGINS=https://domino152.github.io
@@ -41,18 +43,17 @@ NTA_HOMEPAGE=https://www.nta.ac.in/
 NTA_CONTACT_PAGE=https://www.nta.ac.in/ContactUs
 ```
 
-7. Confirm Railway is using `railway.json`. It starts the API with `node server/index.js` and checks `/api/health`.
-8. Generate a Railway public domain for the backend, then test `https://your-service.up.railway.app/api/health`.
+9. Deploy, then test `https://your-service.onrender.com/api/health`.
 
 ## GitHub Pages Frontend
 
 1. Open the GitHub repo, then go to **Settings > Secrets and variables > Actions > Variables**.
-2. Add `VITE_API_BASE_URL` with your Railway backend URL, for example `https://your-service.up.railway.app`.
+2. Add `VITE_API_BASE_URL` with your Render backend URL, for example `https://your-service.onrender.com`.
 3. Go to **Settings > Pages**.
 4. Under **Build and deployment**, set **Source** to **GitHub Actions**.
 5. Push to `main`, or run **Deploy to GitHub Pages** manually from the Actions tab.
 6. Open `https://domino152.github.io/BTI/`.
-7. Add the final Pages origin to Railway `FRONTEND_ORIGINS`. For the default Pages URL, use `https://domino152.github.io`.
+7. Add the final Pages origin to Render `FRONTEND_ORIGINS`. For the default Pages URL, use `https://domino152.github.io`.
 
 ## Verification
 
