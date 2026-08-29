@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, NavLink, Navigate, useLocation, useNavigate, useParams } from 'react-router-dom'
 import {
-  AlertCircle, ArrowLeft, ArrowRight, BookOpen, CalendarDays, Check, CheckCircle2,
-  ChevronLeft, ChevronRight, Clock3, CreditCard, Download, ExternalLink,
-  FileCheck2, FileText, Globe2, GraduationCap, HelpCircle, LocateFixed,
-  LockKeyhole, MapPin, Megaphone, Menu, Newspaper, Phone, PlayCircle,
-  Search, ShieldCheck, Sparkles, UserRound, WalletCards, X
+  AlertCircle, ArrowLeft, ArrowRight, AtSign, BookOpen, CalendarDays, Check, CheckCircle2,
+  ChevronLeft, ChevronRight, Clock, Clock3, CreditCard, Download, ExternalLink,
+  FileCheck2, FileText, Globe2, GraduationCap, HelpCircle, Link2, LocateFixed,
+  LockKeyhole, Mail, MapPin, Megaphone, Menu, Newspaper, Phone, PlayCircle,
+  Rss, Search, Share2, ShieldCheck, Sparkles, UserRound, WalletCards, X
 } from 'lucide-react'
 import { Carousel, EmptyState, ExamCard, ExternalAnchor, Footer, Header, Status, WorkspaceShell } from './components'
 import { ecosystem, exams, examinationShowcase, getExam, getSteps, heroSlides, latestNews, partnerLogos } from './data'
@@ -16,7 +16,8 @@ const deepExams = exams.filter(e => e.steps)
 export function Home() {
   return <div className="public-page">
     <a className="nta-skip" href="#nta-main">Skip to main content</a>
-    <Header/>
+    <NtaTopBar/>
+    <NtaHeader/>
     <main id="nta-main">
       <section className="nta-hero">
         <div className="nta-hero-left">
@@ -75,10 +76,30 @@ function useLiveClock() {
 }
 
 function formatDate(d) {
-  return d.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: '2-digit', year: 'numeric' })
+  return d.toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })
 }
 function formatTime(d) {
-  return d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })
+  return d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true })
+}
+
+function NtaTopBar() {
+  const now = useLiveClock()
+  return <div className="nta-topbar" role="complementary" aria-label="Site utility bar">
+    <div className="nta-topbar-inner">
+      <div className="nta-topbar-left">
+        <span className="clock"><CalendarDays size={13}/> {formatDate(now)}</span>
+        <span className="divider" aria-hidden="true"></span>
+        <span className="clock"><Clock size={13}/> {formatTime(now)} IST</span>
+      </div>
+      <div className="nta-topbar-right">
+        <span className="social" aria-label="Social media">
+          <a href="#" aria-label="Facebook (placeholder)"><Share2 size={13}/></a>
+          <a href="#" aria-label="Twitter (placeholder)"><AtSign size={13}/></a>
+          <a href="#" aria-label="YouTube (placeholder)"><PlayCircle size={13}/></a>
+        </span>
+      </div>
+    </div>
+  </div>
 }
 
 function NtaHeader() {
@@ -111,13 +132,13 @@ function NtaHeader() {
 
       <div className="nta-azadi" aria-label="75th Azadi Ka Amrit Mahotsav">
         <span className="nta-azadi-tricolor" aria-hidden="true"><span/><span/><span/></span>
-        <span className="nta-azadi-text"><strong>75</strong><small>Azadi Ka</small>Amrit Mahotsav</span>
+        <span className="nta-azadi-text"><small>Azadi Ka</small>Amrit Mahotsav</span>
       </div>
 
       <div className="nta-header-right">
         <LiveDateTime/>
         <Link className="primary-btn" to="/login" style={{minHeight:42,padding:'0 18px'}}>
-          <UserRound size={15}/> {state.authenticated ? 'My Account' : 'Sign In / Login'} <ArrowRight size={15}/>
+          <UserRound size={15}/> {state.authenticated ? 'My Account' : 'Sign In'}
         </Link>
         <button className="nta-menu-btn" aria-label={open ? 'Close menu' : 'Open menu'} aria-expanded={open} onClick={() => setOpen(o => !o)}>
           {open ? <X size={20}/> : <Menu size={20}/>}
@@ -351,6 +372,24 @@ function NtaFooter() {
   return <footer className="nta-footer" aria-labelledby="nta-footer-title">
     <h2 id="nta-footer-title" className="sr-only">NTA website footer</h2>
     <div className="nta-footer-top">
+      <div className="nta-footer-col nta-footer-brand">
+        <div className="row">
+          <span className="nta-emblem" aria-hidden="true"></span>
+          <div className="brand-text">
+            <small className="hi">राष्ट्रीय परीक्षा एजेंसी</small>
+            <strong className="en">National Testing Agency</strong>
+          </div>
+        </div>
+        <p>An autonomous body under the Department of Higher Education, Ministry of Education, Government of India. Responsible for conducting standardised examinations across multiple streams.</p>
+        <div className="nta-footer-social" aria-label="Social media">
+          <a href="#" aria-label="Facebook (placeholder)"><Share2 size={16}/></a>
+          <a href="#" aria-label="Twitter (placeholder)"><AtSign size={16}/></a>
+          <a href="#" aria-label="YouTube (placeholder)"><PlayCircle size={16}/></a>
+          <a href="#" aria-label="Instagram (placeholder)"><Link2 size={16}/></a>
+          <a href="#" aria-label="LinkedIn (placeholder)"><Rss size={16}/></a>
+        </div>
+      </div>
+
       <div className="nta-footer-col">
         <h4>Quick Links</h4>
         <ul>
@@ -395,13 +434,19 @@ function NtaFooter() {
       </div>
 
       <div className="nta-footer-col">
-        <h4>Location</h4>
+        <h4>Location & Ministry</h4>
         <div className="nta-footer-map" aria-label="NTA office location">
           <div className="map-art">
             <span className="pin"><MapPin size={28}/></span>
-            <span className="map-label">National Testing Agency<br/>राष्ट्रीय परीक्षा एजेंसी</span>
           </div>
-          <a href="https://maps.google.com/?q=NSIC-MDBP+Building+Okhla+New+Delhi" target="_blank" rel="noreferrer">View larger map <ArrowRight size={12}/></a>
+          <a href="https://maps.google.com/?q=NSIC-MDBP+Building+Okhla+New+Delhi" target="_blank" rel="noreferrer">View on Google Maps <ArrowRight size={11}/></a>
+        </div>
+        <div className="nta-footer-ministry" style={{marginTop:14}}>
+          <span className="badge" aria-hidden="true"></span>
+          <div className="text">
+            <strong>Ministry of Education</strong>
+            <small>Government of India</small>
+          </div>
         </div>
       </div>
     </div>
