@@ -30,7 +30,6 @@ For local-only evaluation, set `ALLOW_MEMORY_DB=true`. Documents default to `sto
 
 ```env
 NODE_ENV=production
-PORT=8787
 MONGODB_URI=${{MongoDB.MONGO_URL}}
 MONGODB_DB_NAME=nta_portal
 DOCUMENT_STORAGE_PATH=/data/documents
