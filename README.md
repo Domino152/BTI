@@ -55,6 +55,8 @@ NTA_CONTACT_PAGE=https://www.nta.ac.in/ContactUs
 6. Open `https://domino152.github.io/BTI/`.
 7. Add the final Pages origin to Render `FRONTEND_ORIGINS`. For the default Pages URL, use `https://domino152.github.io`.
 
+If the workflow fails at `actions/configure-pages` with `Get Pages site failed`, GitHub Pages has not been enabled for the repository yet. The easiest fix is step 3 and 4 above. For automatic enablement, create a fine-grained GitHub token with repository Pages write access, save it as an Actions secret named `PAGES_PAT`, and re-run the workflow.
+
 ## Verification
 
 - `pnpm run test:api` exercises registration, session authentication, filesystem document upload/delete, and the NTA page parser using an isolated temporary directory.
